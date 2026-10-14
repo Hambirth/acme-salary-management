@@ -9,3 +9,7 @@
 7. Close with trade-offs: SQLite is suitable for one assessment instance and needs persistent storage; PostgreSQL is the next step for multiple replicas. No payroll/taxes/live FX. AI accelerated implementation, while tests and review check correctness.
 
 Record against the deployed URL before submission. No video has been recorded yet. Only claim checks documented in the verification record.
+
+## Expanded walkthrough
+
+The updated recording is `docs/demo.mp4` (2m36s, captions, no voiceover). It shows login, default-Viewer demo registration, HR overview, approximate USD/employment-type comparisons, all salary percentiles/extremes, tenure bands, directory and title filters, previously recorded synthetic salary creation/edit/delete, correlated audit, application logs, Swagger and Viewer salary privacy. It combines the earlier live CRUD footage with freshly captured expanded features. No real employee data or deployment secrets appear.

@@ -56,7 +56,17 @@ export function Select({
       >
         {all && <option value="">{all}</option>}
         {values.map((v) => (
-          <option key={v}>{v}</option>
+          <option key={v} value={v}>
+            {(
+              {
+                local: "Local currency",
+                usd: "Approximate USD",
+                name: "Name",
+                salary: "Annual salary",
+                joiningDate: "Joining date",
+              } as Record<string, string>
+            )[v] ?? v}
+          </option>
         ))}
       </select>
     </label>

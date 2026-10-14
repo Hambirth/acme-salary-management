@@ -56,6 +56,7 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 pnpm format:check
 pnpm build
+pnpm smoke:production
 ```
 
 The core suite has 31 backend tests plus 5 frontend tests and 6 desktop/mobile browser scenarios covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
@@ -68,7 +69,7 @@ The production server serves the built React application and API from one origin
 
 `Dockerfile` provides an alternative container deployment. SQLite requires a persistent disk and one application instance; an ephemeral serverless function is unsuitable. For multiple instances, migrate to PostgreSQL and shared rate limiting.
 
-The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions runs lint, type checks, backend/frontend tests, formatting, build and Chromium tests on desktop and mobile. The public app is deployed and verified at https://acme-salary-management-ten.vercel.app/ using Vercel Hobby and Turso Starter (free; no payment method configured). The live URL is ready. A 2m31s walkthrough has been recorded locally; it predates the expanded analytics and needs a new recording before final submission. See `docs/demo-script.md` for the walkthrough.
+The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions runs lint, type checks, backend/frontend tests, formatting, build and Chromium tests on desktop and mobile. The public app is deployed and verified at https://acme-salary-management-ten.vercel.app/ using Vercel Hobby and Turso Starter (free; no payment method configured). The live URL is ready. The [2m36s captioned demo walkthrough](docs/demo.mp4) covers the expanded reports, registration, salary CRUD, privacy, audit/logging and Swagger. It has no voiceover. See `docs/demo-script.md` for the walkthrough.
 
 ## Documentation
 

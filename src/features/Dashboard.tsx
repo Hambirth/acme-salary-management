@@ -183,7 +183,11 @@ export function Dashboard({
               <h2>How pay compares</h2>
               <p>
                 Average and median annual salary by{" "}
-                {groupBy === "jobTitle" ? "job title" : groupBy}
+                {groupBy === "jobTitle"
+                  ? "job title"
+                  : groupBy === "employmentType"
+                    ? "employment type"
+                    : groupBy}
               </p>
             </div>
             <select

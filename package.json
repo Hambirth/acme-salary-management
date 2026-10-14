@@ -18,7 +18,8 @@
     "test:web": "vitest run",
     "test:e2e": "playwright test",
     "lint": "eslint server src tests scripts api *.ts *.mjs && node scripts/check-test-locations.mjs",
-    "test:all": "pnpm test && pnpm test:web && pnpm test:e2e"
+    "test:all": "pnpm test && pnpm test:web && pnpm test:e2e",
+    "smoke:production": "node scripts/smoke-production.mjs"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
