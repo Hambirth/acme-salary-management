@@ -43,3 +43,7 @@ The recording shows HR login/reports, local and approximate USD views, group sta
 ## Login and account creation update
 
 Removed the Explore-the-demo panel, public password display and prefilled credentials from the login UI. The Create-an-account flow explicitly offers Read-only viewer and HR manager, defaults to Viewer and describes the selected role's access. Updated frontend and desktop/mobile tests cover both successful account types and their resulting permissions. Current suite: 31 backend tests, 7 frontend tests, 8 browser scenarios. The previously recorded video reflects the login page before this UI update; public credentials remain in the submission README for reviewers.
+
+## Refreshed video after login and signup changes
+
+The current `docs/demo.mp4` is 6m15s with 42 freshly recorded sections, captions and no voiceover. It shows the clean login with blank fields and no demo-password panel; successful Viewer and HR account creation; reports, exact salary CRUD, CSV, audit/logs, Swagger, Viewer salary-free responses and HTTP 403, logout, source and passing CI. Two synthetic signup accounts were created for the demonstrations, and both sessions were logged out. The temporary employee was removed and headcount remained 10,000. All sections are sampled for visual review and the complete H.264 MP4 is decoded before publication. Exact chapter times are in `docs/demo-chapters.md`.

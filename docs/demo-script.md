@@ -1,6 +1,6 @@
 # Complete demo walkthrough
 
-The current video is [demo.mp4](demo.mp4): **6m07s**, 40 freshly recorded sections, on-screen captions and no voiceover. The [chapter index](demo-chapters.md) gives exact start times.
+The current video is [demo.mp4](demo.mp4): **6m15s**, 42 freshly recorded sections, on-screen captions and no voiceover. The [chapter index](demo-chapters.md) gives exact start times.
 
 The recording covers:
 
@@ -11,7 +11,7 @@ The recording covers:
 5. A temporary synthetic employee created at INR 1,800,000.29, updated to INR 1,900,000.39, and removed with confirmation.
 6. Correlated create/update/delete audit records and the HR application-log viewer.
 7. Swagger parameters, interactive read-only requests and a real HR directory response with HTTP 200.
-8. Registration options and the default Viewer role, followed by Viewer login.
+8. Successful creation of read-only Viewer and HR manager accounts, default Viewer selection and their different permissions.
 9. Viewer reports and directory privacy, a real salary-free API response, and HTTP 403 for unauthorized audit access.
 10. Protected URLs, page-not-found recovery, logout, repository structure, AI workflow artifacts and passing GitHub Actions.
 
