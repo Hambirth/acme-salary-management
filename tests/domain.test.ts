@@ -1,0 +1,14 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { employeeSchema,minorUnits,quantile,summarize,csvCell } from '../server/domain.ts';
+import { parseQuery } from '../server/employees.ts';
+import { hashPassword,verifyPassword } from '../server/auth.ts';
+const valid={name:'Alex Smith',email:'ALEX@acme.example',country:'India',department:'Engineering',jobTitle:'Software Engineer',employmentType:'Full-time',salary:'123456.78',joiningDate:'2020-01-15'};
+test('money converts decimal text to exact integer minor units',()=>{assert.equal(minorUnits('123456.78'),12345678);assert.equal(minorUnits('0.29'),29);assert.equal(minorUnits('1.1'),110);});
+test('employee validation rejects negative, excessive and fractional-cent salaries',()=>{for(const salary of ['-1','0','1.001','1e6','1000000000','NaN'])assert.equal(employeeSchema.safeParse({...valid,salary}).success,false);});
+test('employee validation rejects impossible dates and normalizes email',()=>{assert.equal(employeeSchema.parse(valid).email,'alex@acme.example');for(const joiningDate of ['2025-02-30','2035-01-01','invalid'])assert.equal(employeeSchema.safeParse({...valid,joiningDate}).success,false);});
+test('quantiles interpolate even-sized samples and handle empty data',()=>{assert.equal(quantile([100,200,300,400],.5),250);assert.equal(quantile([100,200,300,400],.25),175);assert.equal(quantile([], .5),0);});
+test('statistics do not mutate their input and sum correctly',()=>{const values=[300,100,200];assert.deepEqual(summarize(values),{count:3,total:600,average:200,median:200,min:100,max:300,p25:150,p75:250});assert.deepEqual(values,[300,100,200]);});
+test('CSV quotes delimiters and protects spreadsheet formulas',()=>{assert.equal(csvCell('hello,"world"'),'"hello,""world"""');assert.equal(csvCell('=1+1'),'"\'=1+1"');assert.equal(csvCell('  @SUM(A1)'),'"\'  @SUM(A1)"');});
+test('query validation rejects unsafe sort expressions and unbounded pages',()=>{assert.throws(()=>parseQuery({sort:'name; DROP TABLE employees'}));assert.throws(()=>parseQuery({pageSize:1000}));assert.throws(()=>parseQuery({page:-1}));assert.throws(()=>parseQuery({sort:'salary'},'VIEWER'));});
+test('password hashes use distinct salts and verify safely',()=>{const a=hashPassword('correct horse'),b=hashPassword('correct horse');assert.notEqual(a,b);assert.equal(verifyPassword('correct horse',a),true);assert.equal(verifyPassword('wrong',a),false);});
