@@ -1,4 +1,9 @@
 import {
+  createClient as createRemoteClient,
+  type Client as RemoteClient,
+  type Transaction as RemoteTransaction,
+} from "@tursodatabase/serverless/compat";
+import {
   createClient,
   type Client,
   type Transaction,
@@ -25,7 +30,9 @@ export type DB = {
   }>;
   close(): void;
 };
-function wrap(client: Client | Transaction): DB {
+function wrap(
+  client: Client | Transaction | RemoteClient | RemoteTransaction,
+): DB {
   return {
     prepare(sql) {
       return {
@@ -75,15 +82,20 @@ export async function openDatabase(
     throw new Error("TURSO_AUTH_TOKEN is required for the hosted database.");
   if (!remote && path !== ":memory:")
     mkdirSync(dirname(path), { recursive: true });
-  const client = createClient({
-    url:
-      remote ??
-      (path === ":memory:"
-        ? "file::memory:"
-        : "file:" + resolve(path).replaceAll("\\", "/")),
-    authToken: remote ? process.env.TURSO_AUTH_TOKEN : undefined,
-    intMode: "number",
-  });
+  const client = remote
+    ? createRemoteClient({
+        url: remote,
+        authToken: process.env.TURSO_AUTH_TOKEN,
+      })
+    : createClient({
+        url:
+          remote ??
+          (path === ":memory:"
+            ? "file::memory:"
+            : "file:" + resolve(path).replaceAll("\\", "/")),
+        authToken: remote ? process.env.TURSO_AUTH_TOKEN : undefined,
+        intMode: "number",
+      });
   const db = wrap(client);
   if (!remote)
     await db.exec(
