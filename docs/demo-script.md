@@ -1,15 +1,18 @@
-# Three minute demo walkthrough
+# Complete demo walkthrough
 
-1. Introduce the problem: ACME's HR team manages 10,000 employees across six countries and needs salary data management and compensation insights.
-2. Sign in as HR manager. Show organization headcount, the INR-scoped budget, median and average. Explain why different currencies are not added together. Change currency to USD and group comparisons by country or job title.
-3. Open Employees. Search by email, filter by country and department, change salary sorting and navigate pages. Export the current filtered set to CSV.
-4. Add a clearly named demo employee with annual salary and joining date. Edit its salary. Open Activity log to show who changed it and when. Delete the demo employee after demonstrating the confirmation dialog.
-5. Sign out and sign in as Viewer. Show that add/edit/delete controls and individual salaries are absent. Explain that the API enforces this even if someone manually invokes endpoints.
-6. Briefly show the requirements document, API module boundaries and tests. Explain integer money storage, session revocation, transactional audit records and optimistic concurrency.
-7. Close with trade-offs: SQLite is suitable for one assessment instance and needs persistent storage; PostgreSQL is the next step for multiple replicas. No payroll/taxes/live FX. AI accelerated implementation, while tests and review check correctness.
+The current video is [demo.mp4](demo.mp4): **6m07s**, 40 freshly recorded sections, on-screen captions and no voiceover. The [chapter index](demo-chapters.md) gives exact start times.
 
-Record against the deployed URL before submission. No video has been recorded yet. Only claim checks documented in the verification record.
+The recording covers:
 
-## Expanded walkthrough
+1. Login and the HR overview for 10,000 employees across six countries.
+2. Local-currency reporting and explicitly approximate USD conversion.
+3. Country, department, job-title and employment-type comparisons; full salary statistics, tenure, bands and peer outliers.
+4. Directory search, exact filters, sorting, pagination and filtered CSV download.
+5. A temporary synthetic employee created at INR 1,800,000.29, updated to INR 1,900,000.39, and removed with confirmation.
+6. Correlated create/update/delete audit records and the HR application-log viewer.
+7. Swagger parameters, interactive read-only requests and a real HR directory response with HTTP 200.
+8. Registration options and the default Viewer role, followed by Viewer login.
+9. Viewer reports and directory privacy, a real salary-free API response, and HTTP 403 for unauthorized audit access.
+10. Protected URLs, page-not-found recovery, logout, repository structure, AI workflow artifacts and passing GitHub Actions.
 
-The updated recording is `docs/demo.mp4` (2m36s, captions, no voiceover). It shows login, default-Viewer demo registration, HR overview, approximate USD/employment-type comparisons, all salary percentiles/extremes, tenure bands, directory and title filters, previously recorded synthetic salary creation/edit/delete, correlated audit, application logs, Swagger and Viewer salary privacy. It combines the earlier live CRUD footage with freshly captured expanded features. No real employee data or deployment secrets appear.
+All employee records are synthetic. The temporary recording employee was deleted, and the recorded Viewer API response confirms headcount is back to 10,000. No deployment credentials or real employee data appear. Every section uses fresh footage from the current deployed app.

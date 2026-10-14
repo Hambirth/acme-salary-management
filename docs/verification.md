@@ -33,3 +33,9 @@ Live verification confirmed durable data and the new analytics/OpenAPI. It also 
 Final public verification passed on 29ae926: both demo logins with browser Origin headers, 10,000 employees, filters/pagination, local and combined USD reports, tenure, full salary stats, authenticated Swagger, HR logs, exact salary create/update, stale-write conflict, correlated audit, CSV and Viewer restrictions. The temporary employee was removed and headcount restored. GitHub Actions passed all 31 backend + 6 frontend + 6 desktop/mobile browser scenarios. The expanded 17-scene captioned demo is published at `docs/demo.mp4`; its MP4 fully decodes and every scene was sampled for visual review.
 
 A final browser login received one transient non-JSON hosting error; the next attempt and direct API checks succeeded. The client now converts such platform responses into a readable retry message instead of exposing JSON parser errors. A frontend regression test covers this behavior. Final totals: 31 backend, 6 frontend and 6 desktop/mobile browser scenarios, plus the production-start smoke check.
+
+## Complete fresh demo recording
+
+At the user's request, the latest `docs/demo.mp4` is a fresh 40-section walkthrough of the current live app, including its new title and branding. The verified duration is 6m07s (4,380,980 bytes, H.264 MP4, captions, no voiceover). All video frames decode successfully and all 40 sections were sampled and visually reviewed. Exact timestamps are in `docs/demo-chapters.md`.
+
+The recording shows HR login/reports, local and approximate USD views, group statistics/tenure/outliers, search/filters/sort/pages/CSV, exact-cent employee creation/update/deletion, correlated audit/logs, Swagger HTTP 200, registration options, Viewer salary-free UI/API, audit HTTP 403, protected/unknown pages, logout, AI workflow and passing CI. The temporary fixture was removed; the recorded Viewer API response reports exactly 10,000 employees.

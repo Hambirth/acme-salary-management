@@ -69,7 +69,7 @@ The production server serves the built React application and API from one origin
 
 `Dockerfile` provides an alternative container deployment. SQLite requires a persistent disk and one application instance; an ephemeral serverless function is unsuitable. For multiple instances, migrate to PostgreSQL and shared rate limiting.
 
-The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions runs lint, type checks, backend/frontend tests, formatting, build and Chromium tests on desktop and mobile. The public app is deployed and verified at https://acme-salary-management-ten.vercel.app/ using Vercel Hobby and Turso Starter (free; no payment method configured). The live URL is ready. The [2m36s captioned demo walkthrough](docs/demo.mp4) covers the expanded reports, registration, salary CRUD, privacy, audit/logging and Swagger. It has no voiceover. See `docs/demo-script.md` for the walkthrough.
+The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions runs lint, type checks, backend/frontend tests, formatting, build and Chromium tests on desktop and mobile. The public app is deployed and verified at https://acme-salary-management-ten.vercel.app/ using Vercel Hobby and Turso Starter (free; no payment method configured). The live URL is ready. The [6m07s complete demo walkthrough](docs/demo.mp4) contains 40 freshly recorded sections covering login, reports, registration options, salary CRUD, CSV, audit/logging, Swagger, Viewer API privacy, logout and CI. It has no voiceover. See `docs/demo-script.md` for the walkthrough.
 
 ## Documentation
 
