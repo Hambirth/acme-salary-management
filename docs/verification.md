@@ -26,5 +26,6 @@ The expanded suite adds tenure anniversary boundaries, USD conversion/filtering/
 
 A local service benchmark (`node scripts/benchmark.mjs`, Node 24.19, Windows, 30 warmed samples each, 10,000 employees) measured directory p50/p95 2.38/4.08 ms, local insights 35.00/48.46 ms and combined USD insights 215.30/268.11 ms. These figures exclude HTTP/network/browser and hosted cold starts; they do not predict Vercel/Turso latency.
 
-
 GitHub Actions passed the expanded suite on 26494d4. The first live check exposed Vercel's rewritten internal Host differing from the browser's public Origin. Origin resolution now uses Vercel gateway forwarded host/protocol only inside Vercel, with a regression test that rejects trusting those headers outside the gateway. The backend suite now contains 31 passing tests.
+
+Live verification confirmed durable data and the new analytics/OpenAPI. It also exposed Vercel's trailing-slash directory routing for Swagger. The app now serves the docs index explicitly and uses canonical non-trailing URLs; the platform redirects trailing variants to that endpoint.

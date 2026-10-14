@@ -67,7 +67,7 @@ try {
     await request("/openapi.json", { cookie: hr })
   ).json();
   assert.equal(specification.info.version, "2.0.0");
-  assert.equal((await request("/docs/", { cookie: hr })).status, 200);
+  assert.equal((await request("/docs", { cookie: hr })).status, 200);
   assert.equal((await request("/logs", { cookie: viewer })).status, 403);
   assert.equal((await request("/logs", { cookie: hr })).status, 200);
   const csv = await request(

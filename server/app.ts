@@ -305,6 +305,9 @@ export function createApp(db: DB) {
     res.json(await insights(db, req.query, req.user!.role)),
   );
   app.get("/api/openapi.json", (_req, res) => res.json(openApi));
+  app.get("/api/docs", (_req, res) =>
+    res.sendFile(resolve("server/docs/index.html")),
+  );
   app.use("/api/docs", express.static(resolve("server/docs")));
   app.get("/api/logs", requireHR, async (_req, res) =>
     res.json(

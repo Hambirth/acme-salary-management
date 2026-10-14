@@ -221,7 +221,7 @@ function App() {
           )}
         </div>
         <footer>
-          <a href="/api/docs/" target="_blank" rel="noreferrer">
+          <a href="/api/docs" target="_blank" rel="noreferrer">
             API documentation ↗
           </a>
           ACME Compensation{" "}
