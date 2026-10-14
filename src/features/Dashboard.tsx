@@ -1,14 +1,14 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   api,
   money,
   number,
   type User,
-  type Employee,
   type Insights,
   type Options,
 } from "../api";
-import { Heading, Select, Metric, Modal, Logo } from "../components";
+import { Heading, Select, Metric } from "../components";
+import { StatisticsTable } from "./StatisticsTable";
 export function Dashboard({
   options,
   revision,
@@ -21,6 +21,8 @@ export function Dashboard({
   onEmployees: () => void;
 }) {
   const [currency, setCurrency] = useState("INR"),
+    [view, setView] = useState("local"),
+    [jobTitle, setJobTitle] = useState(""),
     [country, setCountry] = useState(""),
     [department, setDepartment] = useState(""),
     [groupBy, setGroupBy] = useState("department"),
@@ -33,7 +35,14 @@ export function Dashboard({
     setError("");
     api<Insights>(
       "/insights?" +
-        new URLSearchParams({ currency, country, department, groupBy }),
+        new URLSearchParams({
+          currency: view === "usd" ? "" : currency,
+          country,
+          department,
+          jobTitle,
+          groupBy,
+          view,
+        }),
     )
       .then((d) => {
         if (active) setData(d);
@@ -47,8 +56,9 @@ export function Dashboard({
     return () => {
       active = false;
     };
-  }, [currency, country, department, groupBy, revision]);
+  }, [currency, country, department, jobTitle, groupBy, view, revision]);
   const summary = data?.summary;
+  const reportCurrency = data?.currency ?? (view === "usd" ? "USD" : currency);
   const maxAverage = Math.max(
     ...(data?.groups.map((g) => g.stats.average) ?? [1]),
     1,
@@ -65,15 +75,23 @@ export function Dashboard({
         </button>
       </Heading>
       <div className="filterbar">
+        <Select
+          label="Salary view"
+          value={view}
+          onChange={setView}
+          values={["local", "usd"]}
+        />
         <span className="filter-icon">
           ☷ <strong>Explore your data</strong>
         </span>
-        <Select
-          label="Currency"
-          value={currency}
-          onChange={setCurrency}
-          values={["INR", "USD", "GBP", "EUR", "SGD", "CAD"]}
-        />
+        {view === "local" && (
+          <Select
+            label="Currency"
+            value={currency}
+            onChange={setCurrency}
+            values={["INR", "USD", "GBP", "EUR", "SGD", "CAD"]}
+          />
+        )}
         <Select
           label="Country"
           value={country}
@@ -88,9 +106,18 @@ export function Dashboard({
           values={options.departments}
           all="All departments"
         />
+        <Select
+          label="Job title"
+          value={jobTitle}
+          onChange={setJobTitle}
+          values={options.jobTitles}
+          all="All job titles"
+        />
         <button
           className="text-button"
           onClick={() => {
+            setView("local");
+            setJobTitle("");
             setCountry("");
             setDepartment("");
             setCurrency("INR");
@@ -100,8 +127,15 @@ export function Dashboard({
         </button>
       </div>
       <div className="currency-note">
-        <span>ⓘ</span> Salary insights use <strong>{currency} only</strong>.
-        Different currencies are never combined.{" "}
+        <span>ⓘ</span>{" "}
+        {view === "usd" ? (
+          "Approximate USD conversion using illustrative static rates. This is not a live exchange-rate or payroll calculation."
+        ) : (
+          <>
+            Salary insights use <strong>{currency} only</strong>. Different
+            currencies are never combined.
+          </>
+        )}{" "}
         {loading && <span className="loading-inline">Updating…</span>}
       </div>
       {error && (
@@ -118,19 +152,19 @@ export function Dashboard({
         />
         <Metric
           title="Annual salary budget"
-          value={summary ? money(summary.total, currency, true) : "—"}
+          value={summary ? money(summary.total, reportCurrency, true) : "—"}
           detail={`${number(summary?.count ?? 0)} employees in selected scope`}
           icon="↗"
         />
         <Metric
           title="Median annual salary"
-          value={summary ? money(summary.median, currency, true) : "—"}
+          value={summary ? money(summary.median, reportCurrency, true) : "—"}
           detail="The midpoint of your salary range"
           icon="≋"
         />
         <Metric
           title="Average annual salary"
-          value={summary ? money(summary.average, currency, true) : "—"}
+          value={summary ? money(summary.average, reportCurrency, true) : "—"}
           detail="Annual base pay per employee"
           icon="◈"
         />
@@ -160,6 +194,7 @@ export function Dashboard({
               <option value="department">Department</option>
               <option value="country">Country</option>
               <option value="jobTitle">Job title</option>
+              <option value="employmentType">Employment type</option>
             </select>
           </div>
           <div className="legend">
@@ -169,7 +204,7 @@ export function Dashboard({
             <span>
               <i className="median-dot" /> Median salary
             </span>
-            <small>{currency} / year</small>
+            <small>{reportCurrency} / year</small>
           </div>
           <div className="bar-chart">
             {data?.groups.map((group, i) => (
@@ -192,7 +227,9 @@ export function Dashboard({
                     }}
                   />
                 </div>
-                <strong>{money(group.stats.average, currency, true)}</strong>
+                <strong>
+                  {money(group.stats.average, reportCurrency, true)}
+                </strong>
               </div>
             ))}
           </div>
@@ -217,7 +254,7 @@ export function Dashboard({
           >
             <div>
               <strong>{number(data?.filteredHeadcount ?? 0)}</strong>
-              <span>employees · {currency}</span>
+              <span>employees · {reportCurrency}</span>
             </div>
           </div>
           <div className="workforce-list">
@@ -237,13 +274,26 @@ export function Dashboard({
           </div>
         </section>
       </div>
+      <StatisticsTable
+        title="Detailed salary statistics"
+        groups={data?.groups ?? []}
+        currency={reportCurrency}
+        hr={user.role === "HR_MANAGER"}
+      />
+      <StatisticsTable
+        title="Pay versus tenure"
+        description={`Completed years of service as of ${data?.tenureAsOf ?? "2026-10-14"}. These comparisons do not establish causation.`}
+        groups={data?.tenure ?? []}
+        currency={reportCurrency}
+        hr={user.role === "HR_MANAGER"}
+      />
       {user.role === "HR_MANAGER" && (
         <div className="dashboard-grid lower">
           <section className="panel">
             <div className="panel-heading">
               <div>
                 <h2>Salary distribution</h2>
-                <p>Annual base salary bands · {currency}</p>
+                <p>Annual base salary bands · {reportCurrency}</p>
               </div>
               <span className="tag">
                 {number(data?.filteredHeadcount ?? 0)} people
@@ -311,7 +361,7 @@ export function Dashboard({
                     <td>{r.name}</td>
                     <td>{r.jobTitle}</td>
                     <td>{r.country}</td>
-                    <td>{money(r.salary, currency)}</td>
+                    <td>{money(r.salary, reportCurrency)}</td>
                     <td>
                       <span className="tag amber">{r.kind}</span>
                     </td>

@@ -18,3 +18,5 @@ The current login limiter is in-memory per server instance. On Vercel that is a 
 Public publication is not complete until the deployed URL has been returned and checked. No paid plan or payment is required by this prepared workflow.
 
 Sources: https://vercel.com/docs/plans/hobby , https://vercel.com/docs/functions/runtimes/node-js , https://vercel.com/kb/guide/is-sqlite-supported-in-vercel , https://turso.tech/pricing?frequency=monthly , https://docs.turso.tech/sdk/ts/reference .
+
+Expanded reports deploy through the same Vercel project. Committed migrations run automatically before the app handles requests and preserve existing data. `server/**` is included in the function bundle for SQL migrations and self-hosted Swagger assets. No reseeding is required. Optional `APP_ORIGIN` must exactly match the deployment origin; leave unset to use the request's own origin. `LOG_LEVEL=info` and `LOG_DB_MIN_LEVEL=warn` are economical defaults. Vercel `waitUntil` keeps asynchronous log writes alive after responses. No paid services are added.

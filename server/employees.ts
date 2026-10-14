@@ -118,6 +118,7 @@ export async function saveEmployee(
   body: unknown,
   actor: string,
   id?: number,
+  requestId?: string,
 ) {
   const input = employeeSchema.parse(body);
   const values = [
@@ -171,6 +172,12 @@ export async function saveEmployee(
         input.name,
         JSON.stringify({ before, after }),
       );
+    if (requestId)
+      await tx
+        .prepare(
+          "INSERT INTO audit_requests(audit_id,request_id) VALUES((SELECT max(id) FROM audit),?)",
+        )
+        .run(requestId);
     await transaction.commit();
     return after;
   } catch (error) {
@@ -183,6 +190,7 @@ export async function deleteEmployee(
   id: number,
   version: number,
   actor: string,
+  requestId?: string,
 ) {
   const transaction = await db.transaction();
   const tx = transaction.db;
@@ -201,6 +209,12 @@ export async function deleteEmployee(
         "INSERT INTO audit(actor,action,employee_id,employee_name,details) VALUES(?,?,?,?,?)",
       )
       .run(actor, "Deleted", id, before.name, JSON.stringify({ before }));
+    if (requestId)
+      await tx
+        .prepare(
+          "INSERT INTO audit_requests(audit_id,request_id) VALUES((SELECT max(id) FROM audit),?)",
+        )
+        .run(requestId);
     await transaction.commit();
   } catch (error) {
     await transaction.rollback();

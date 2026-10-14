@@ -12,6 +12,7 @@ async function request(path, { method = "GET", body, cookie = "" } = {}) {
     headers: {
       "Content-Type": "application/json",
       "X-Acme-Request": "1",
+      Origin: base,
       ...(cookie ? { Cookie: cookie } : {}),
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -53,6 +54,22 @@ try {
   ).json();
   assert.equal(report.summary.count, 1657, "deterministic INR population");
   assert.equal(report.organizationHeadcount, 10000);
+  assert.ok(report.tenure.length > 0);
+  assert.equal(report.tenureAsOf, "2026-10-14");
+  assert.ok(report.groups.every((g) => "p25" in g.stats && "min" in g.stats));
+  const usd = await (
+    await request("/insights?view=usd&groupBy=employmentType", { cookie: hr })
+  ).json();
+  assert.equal(usd.summary.count, 10000);
+  assert.equal(usd.currency, "USD");
+  assert.equal(usd.approximate, true);
+  const specification = await (
+    await request("/openapi.json", { cookie: hr })
+  ).json();
+  assert.equal(specification.info.version, "2.0.0");
+  assert.equal((await request("/docs/", { cookie: hr })).status, 200);
+  assert.equal((await request("/logs", { cookie: viewer })).status, 403);
+  assert.equal((await request("/logs", { cookie: hr })).status, 200);
   const csv = await request(
     "/employees/export?country=India&department=Engineering",
     { cookie: hr },
@@ -99,7 +116,12 @@ try {
   );
   const audit = await (await request("/audit", { cookie: hr })).json();
   assert.ok(
-    audit.some((a) => a.employeeId === created.id && a.action === "Updated"),
+    audit.some(
+      (a) =>
+        a.employeeId === created.id &&
+        a.action === "Updated" &&
+        a.requestId === update.headers.get("x-request-id"),
+    ),
   );
   const viewerList = await (
     await request("/employees", { cookie: viewer })
@@ -127,7 +149,7 @@ try {
   assert.ok(!("min" in aggregates.summary));
   assert.equal(aggregates.outliers.length, 0);
   console.log(
-    "PASS: live health, HR/viewer login, 10,000 employees, filters, pagination, currency insights, CSV, exact salary CRUD, stale-write rejection, audit and viewer restrictions.",
+    "PASS: live health, HR/viewer login, 10,000 employees, filters, pagination, currency/approximate USD/tenure insights, Swagger, logs, CSV, exact salary CRUD, stale-write rejection, audit and viewer restrictions.",
   );
 } finally {
   if (created) {

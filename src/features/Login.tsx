@@ -1,28 +1,32 @@
-import React, { useEffect, useState, useCallback } from "react";
-import {
-  api,
-  money,
-  number,
-  type User,
-  type Employee,
-  type Insights,
-  type Options,
-} from "../api";
-import { Heading, Select, Metric, Modal, Logo } from "../components";
+import React, { useState, useEffect } from "react";
+import { api, type User } from "../api";
+import { Logo } from "../components";
 export function Login({ onLogin }: { onLogin: (u: User) => void }) {
-  const [email, setEmail] = useState("hr@acme.example"),
+  const [register, setRegister] = useState(
+      window.location.pathname === "/register",
+    ),
+    [name, setName] = useState(""),
+    [role, setRole] = useState("VIEWER"),
+    [email, setEmail] = useState("hr@acme.example"),
     [password, setPassword] = useState("AssessmentDemo42!"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  useEffect(() => {
+    const sync = () => setRegister(window.location.pathname === "/register");
+    window.addEventListener("popstate", sync);
+    return () => window.removeEventListener("popstate", sync);
+  }, []);
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError("");
     try {
       onLogin(
-        await api<User>("/auth/login", {
+        await api<User>(register ? "/auth/register" : "/auth/login", {
           method: "POST",
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify(
+            register ? { name, email, password, role } : { email, password },
+          ),
         }),
       );
     } catch (e) {
@@ -63,8 +67,33 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
       <section className="login-form">
         <form onSubmit={submit}>
           <span className="eyebrow">YOUR COMPENSATION WORKSPACE</span>
-          <h2>Welcome back.</h2>
+          <h2>{register ? "Create a demo account." : "Welcome back."}</h2>
           <p className="muted">Sign in to make sense of your salary data.</p>
+          {register && (
+            <>
+              <label>
+                Full name
+                <input
+                  required
+                  minLength={2}
+                  maxLength={100}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                />
+              </label>
+              <label>
+                Demo role
+                <select value={role} onChange={(e) => setRole(e.target.value)}>
+                  <option value="VIEWER">Viewer</option>
+                  <option value="HR_MANAGER">HR manager</option>
+                </select>
+              </label>
+              <p className="muted">
+                This assessment contains synthetic data. Production HR access
+                would require administrator approval.
+              </p>
+            </>
+          )}
           <label>
             Email address
             <input
@@ -79,7 +108,8 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
             Password
             <input
               type="password"
-              autoComplete="current-password"
+              autoComplete={register ? "new-password" : "current-password"}
+              minLength={register ? 12 : 1}
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -91,7 +121,28 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
             </div>
           )}
           <button className="primary wide" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in to workspace →"}
+            {busy
+              ? "Please wait…"
+              : register
+                ? "Create account →"
+                : "Sign in to workspace →"}
+          </button>
+          <button
+            className="text-button"
+            type="button"
+            onClick={() => {
+              const next = !register;
+              setRegister(next);
+              setError("");
+              if (next) {
+                setEmail("");
+                setPassword("");
+              }
+              window.history.pushState({}, "", next ? "/register" : "/login");
+              window.dispatchEvent(new PopStateEvent("popstate"));
+            }}
+          >
+            {register ? "Already registered? Sign in" : "Create a demo account"}
           </button>
           <div className="demo-box">
             <strong>Explore the demo</strong>

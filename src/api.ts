@@ -28,6 +28,10 @@ export type Stats = {
   p75: number;
 };
 export type Insights = {
+  view: "local" | "usd";
+  approximate: boolean;
+  tenureAsOf: string;
+  tenure: { name: string; stats: Stats }[];
   currency: string;
   summary: Stats | null;
   groups: { name: string; stats: Stats }[];

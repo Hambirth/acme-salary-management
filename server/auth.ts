@@ -28,6 +28,7 @@ export type User = {
 declare global {
   namespace Express {
     interface Request {
+      requestId?: string;
       user?: User;
       sessionToken?: string;
     }

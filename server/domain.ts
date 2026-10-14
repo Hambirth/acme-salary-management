@@ -76,8 +76,19 @@ export function csvCell(value: unknown): string {
 }
 export class AppError extends Error {
   status: number;
+  code: string;
   constructor(status: number, message: string) {
     super(message);
     this.status = status;
+    this.code =
+      (
+        {
+          400: "BAD_REQUEST",
+          401: "AUTH_REQUIRED",
+          403: "FORBIDDEN",
+          404: "NOT_FOUND",
+          409: "CONFLICT",
+        } as Record<number, string>
+      )[status] ?? "APPLICATION_ERROR";
   }
 }

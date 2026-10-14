@@ -19,3 +19,9 @@ Public deployment verified: https://acme-salary-management-ten.vercel.app/ . Ver
 Live HTTP verification command: node scripts/smoke-live.mjs https://acme-salary-management-ten.vercel.app . Passed health, both roles, 10,000 records, pagination, country/department filters, INR headcount 1,657, CSV, create/update/delete, exact cents, stale updates, audit records and viewer restrictions. Cleanup removed the temporary test record. Data persisted across application redeployments.
 
 Deployment fixes: explicitly included server TypeScript modules in the Vercel function; selected Turso's current serverless compatibility driver for the hosted database; normalized provider array-like rows into named JSON fields. A regression test covers the serialization difference.
+
+## Reference extension verification — 14 October 2026
+
+The expanded suite adds tenure anniversary boundaries, USD conversion/filtering/rounding, minimum-group privacy, migration repeatability, registration/role validation, correlation IDs, safe logging/fallback and cross-origin rejection. Five React Testing Library tests cover report columns/privacy/empty state, registration and authentication errors. Six Playwright scenarios run HR CRUD/CSV/audit/docs, Viewer restrictions and registration/routing on both desktop Chromium and mobile emulation, against a separate in-memory 10,000-employee database. No public database is used by those tests.
+
+A local service benchmark (`node scripts/benchmark.mjs`, Node 24.19, Windows, 30 warmed samples each, 10,000 employees) measured directory p50/p95 2.38/4.08 ms, local insights 35.00/48.46 ms and combined USD insights 215.30/268.11 ms. These figures exclude HTTP/network/browser and hosted cold starts; they do not predict Vercel/Turso latency.

@@ -25,3 +25,7 @@ Payroll execution, tax calculations, bonuses and payslips are outside salary-dat
 ## Assumptions
 
 Salary means annual gross base compensation; currencies have two decimal places for the seeded countries. Records represent current compensation, with changes captured in an audit trail rather than a full effective-dated payroll model. Employer deployment credentials, repository hosting and video capture are external delivery steps and must be verified separately.
+
+## Authorized scope extension — 14 October 2026
+
+The initial requirements above were committed before coding. At the user's request, extend them with full visible percentiles/extremes, tenure summaries, labeled approximate static USD conversion, exact job-title filters, employment-type grouping, synthetic demo registration, URL navigation and error pages, OpenAPI/Swagger, structured/correlated asynchronous database logging, committed migrations, lint/test-location checks and automated frontend plus desktop/mobile browser tests. Live FX, production onboarding and payroll remain excluded. This addendum supersedes the initial exclusions for static conversion and demo registration.

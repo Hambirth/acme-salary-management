@@ -1,14 +1,13 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import {
   api,
   money,
   number,
   type User,
   type Employee,
-  type Insights,
   type Options,
 } from "../api";
-import { Heading, Select, Metric, Modal, Logo } from "../components";
+import { Heading, Select, Modal } from "../components";
 export function Employees({
   options,
   user,
@@ -24,6 +23,8 @@ export function Employees({
     [debounced, setDebounced] = useState(""),
     [country, setCountry] = useState(""),
     [department, setDepartment] = useState(""),
+    [jobTitle, setJobTitle] = useState(""),
+    [currency, setCurrency] = useState(""),
     [sort, setSort] = useState("name"),
     [direction, setDirection] = useState("asc"),
     [page, setPage] = useState(1),
@@ -49,6 +50,8 @@ export function Employees({
     search: debounced,
     country,
     department,
+    jobTitle,
+    currency,
     sort,
     direction,
     page: String(page),
@@ -124,6 +127,26 @@ export function Employees({
             }}
             values={options.departments}
             all="All departments"
+          />
+          <Select
+            label="Job title"
+            value={jobTitle}
+            onChange={(v) => {
+              setJobTitle(v);
+              setPage(1);
+            }}
+            values={options.jobTitles}
+            all="All job titles"
+          />
+          <Select
+            label="Currency"
+            value={currency}
+            onChange={(v) => {
+              setCurrency(v);
+              setPage(1);
+            }}
+            values={["INR", "USD", "GBP", "EUR", "SGD", "CAD"]}
+            all="All currencies"
           />
           <Select
             label="Sort by"

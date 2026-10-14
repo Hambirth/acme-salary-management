@@ -9,10 +9,24 @@ import { Audit } from "./features/Audit";
 import "./style.css";
 const icons = { dashboard: "▦", employees: "♙", audit: "↺" };
 type Tab = "dashboard" | "employees" | "audit";
+const tabPaths: Record<Tab, string> = {
+  dashboard: "/app",
+  employees: "/app/employees",
+  audit: "/app/audit",
+};
 function App() {
+  const [path, setPath] = useState(window.location.pathname);
+  function navigate(next: string, replace = false) {
+    window.history[replace ? "replaceState" : "pushState"]({}, "", next);
+    setPath(next);
+  }
+  useEffect(() => {
+    const update = () => setPath(window.location.pathname);
+    window.addEventListener("popstate", update);
+    return () => window.removeEventListener("popstate", update);
+  }, []);
   const [user, setUser] = useState<User | null>(null),
     [ready, setReady] = useState(false),
-    [tab, setTab] = useState<Tab>("dashboard"),
     [options, setOptions] = useState<Options>({
       countries: {},
       departments: [],
@@ -20,6 +34,21 @@ function App() {
     }),
     [revision, setRevision] = useState(0),
     [notice, setNotice] = useState("");
+  const tab: Tab =
+    path === "/app/employees"
+      ? "employees"
+      : path === "/app/audit"
+        ? "audit"
+        : "dashboard";
+  const setTab = (next: Tab) => navigate(tabPaths[next]);
+  useEffect(() => {
+    if (!ready) return;
+    if (!user && path.startsWith("/app")) navigate("/login", true);
+    else if (user && ["/", "/login", "/register"].includes(path))
+      navigate("/app", true);
+    else if (user?.role === "VIEWER" && path === "/app/audit")
+      navigate("/403", true);
+  }, [ready, user, path]);
   useEffect(() => {
     api<User>("/auth/me")
       .then(setUser)
@@ -44,6 +73,33 @@ function App() {
     return () => clearTimeout(timer);
   }, [notice]);
   if (!ready) return <div className="boot">Opening your workspace…</div>;
+  if (
+    ![
+      "/",
+      "/login",
+      "/register",
+      "/app",
+      "/app/employees",
+      "/app/audit",
+    ].includes(path)
+  )
+    return (
+      <main className="error-page">
+        <Logo />
+        <h1>{path === "/403" ? "Access restricted" : "Page not found"}</h1>
+        <p>
+          {path === "/403"
+            ? "HR manager access is required to view this page."
+            : "The requested page does not exist."}
+        </p>
+        <button
+          className="primary"
+          onClick={() => navigate(user ? "/app" : "/login")}
+        >
+          Return to workspace
+        </button>
+      </main>
+    );
   if (!user)
     return (
       <>
@@ -116,6 +172,7 @@ function App() {
               try {
                 await api("/auth/logout", { method: "POST" });
                 setUser(null);
+                navigate("/login");
               } catch (e) {
                 setNotice((e as Error).message);
               }
@@ -164,6 +221,9 @@ function App() {
           )}
         </div>
         <footer>
+          <a href="/api/docs/" target="_blank" rel="noreferrer">
+            API documentation ↗
+          </a>
           ACME Compensation{" "}
           <span>Annual base salaries · Local currencies · Synthetic demo</span>
         </footer>

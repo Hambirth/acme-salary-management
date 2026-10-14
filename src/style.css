@@ -1548,3 +1548,19 @@ select:focus {
     text-align: center;
   }
 }
+
+.report-table {
+  margin-bottom: 24px;
+}
+.filterbar,
+.directory-tools {
+  flex-wrap: wrap;
+}
+.error-page {
+  max-width: 600px;
+  margin: 15vh auto;
+  padding: 24px;
+}
+.login-form {
+  overflow-y: auto;
+}

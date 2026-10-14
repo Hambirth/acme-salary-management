@@ -22,9 +22,18 @@ import {
   redact,
   saveEmployee,
 } from "./employees.ts";
+import { createLogger } from "./logging.ts";
+import { openApi } from "./openapi.ts";
 import { insights } from "./insights.ts";
 export function createApp(db: DB) {
+  z.object({
+    NODE_ENV: z.enum(["development", "test", "production"]).optional(),
+    TRUST_PROXY: z.enum(["0", "1"]).optional(),
+    APP_ORIGIN: z.union([z.url(), z.literal("")]).optional(),
+  }).parse(process.env);
   const app = express();
+  const logger = createLogger(db);
+  app.locals.flushLogs = logger.flush;
   app.disable("x-powered-by");
   if (process.env.TRUST_PROXY === "1") app.set("trust proxy", 1);
   app.use(
@@ -38,9 +47,33 @@ export function createApp(db: DB) {
       },
     }),
   );
-  app.use(express.json({ limit: "32kb" }));
+
   app.use((req, res, next) => {
-    res.setHeader("X-Request-Id", randomUUID());
+    const requestId = randomUUID(),
+      started = Date.now();
+    res.setHeader("X-Request-Id", requestId);
+    req.requestId = requestId;
+    res.on("finish", () => {
+      if (req.path.startsWith("/api"))
+        logger.write({
+          requestId,
+          level:
+            res.statusCode >= 500
+              ? "error"
+              : res.statusCode >= 400
+                ? "warn"
+                : "info",
+          method: req.method,
+          path: req.route?.path ?? "/api/*",
+          status: res.statusCode,
+          durationMs: Date.now() - started,
+        });
+    });
+    const origin = req.headers.origin;
+    const allowedOrigin =
+      process.env.APP_ORIGIN || `${req.protocol}://${req.get("host")}`;
+    if (origin && origin !== allowedOrigin)
+      return next(new AppError(403, "Origin is not allowed."));
     if (req.path.startsWith("/api")) res.setHeader("Cache-Control", "no-store");
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
@@ -49,6 +82,17 @@ export function createApp(db: DB) {
       return next(new AppError(403, "Missing request protection header."));
     next();
   });
+  app.use(express.json({ limit: "32kb" }));
+  app.use(
+    "/api",
+    rateLimit({
+      windowMs: 60_000,
+      limit: 600,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+      message: { error: "Too many requests. Try again shortly." },
+    }),
+  );
   app.get("/api/health", async (_req, res) => {
     await db.prepare("SELECT 1").get();
     res.json({ status: "ok" });
@@ -96,6 +140,56 @@ export function createApp(db: DB) {
         email: user.email,
         name: user.name,
         role: user.role,
+      });
+    },
+  );
+  app.post(
+    "/api/auth/register",
+    rateLimit({
+      windowMs: 15 * 60 * 1000,
+      limit: 10,
+      standardHeaders: "draft-8",
+      legacyHeaders: false,
+    }),
+    async (req, res) => {
+      const body = z
+        .object({
+          name: z.string().trim().min(2).max(100),
+          email: z
+            .email()
+            .max(150)
+            .transform((v) => v.toLowerCase()),
+          password: z.string().min(12).max(200),
+          role: z.enum(["HR_MANAGER", "VIEWER"]).default("VIEWER"),
+        })
+        .parse(req.body);
+      // This public assessment uses synthetic data and explicitly permits choosing a demo role.
+      const existing = await db
+        .prepare("SELECT id FROM users WHERE email=?")
+        .get(body.email);
+      if (existing)
+        throw new AppError(
+          409,
+          "Registration could not be completed. Try signing in.",
+        );
+      const result = await db
+        .prepare(
+          "INSERT INTO users(email,name,password_hash,role) VALUES(?,?,?,?)",
+        )
+        .run(body.email, body.name, hashPassword(body.password), body.role);
+      const token = await createSession(db, Number(result.lastInsertRowid));
+      res.cookie("acme_session", token, {
+        httpOnly: true,
+        sameSite: "strict",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 8 * 60 * 60 * 1000,
+        path: "/",
+      });
+      res.status(201).json({
+        id: Number(result.lastInsertRowid),
+        name: body.name,
+        email: body.email,
+        role: body.role,
       });
     },
   );
@@ -174,11 +268,27 @@ export function createApp(db: DB) {
     res.json(redact(await getEmployee(db, id(req.params.id)), req.user!.role)),
   );
   app.post("/api/employees", requireHR, async (req, res) =>
-    res.status(201).json(await saveEmployee(db, req.body, req.user!.email)),
+    res
+      .status(201)
+      .json(
+        await saveEmployee(
+          db,
+          req.body,
+          req.user!.email,
+          undefined,
+          req.requestId,
+        ),
+      ),
   );
   app.put("/api/employees/:id", requireHR, async (req, res) =>
     res.json(
-      await saveEmployee(db, req.body, req.user!.email, id(req.params.id)),
+      await saveEmployee(
+        db,
+        req.body,
+        req.user!.email,
+        id(req.params.id),
+        req.requestId,
+      ),
     ),
   );
   app.delete("/api/employees/:id", requireHR, async (req, res) => {
@@ -187,17 +297,29 @@ export function createApp(db: DB) {
       id(req.params.id),
       id(req.body?.version),
       req.user!.email,
+      req.requestId,
     );
     res.status(204).end();
   });
   app.get("/api/insights", async (req, res) =>
     res.json(await insights(db, req.query, req.user!.role)),
   );
+  app.get("/api/openapi.json", (_req, res) => res.json(openApi));
+  app.use("/api/docs", express.static(resolve("server/docs")));
+  app.get("/api/logs", requireHR, async (_req, res) =>
+    res.json(
+      await db
+        .prepare(
+          "SELECT request_id AS requestId,level,method,path,status,duration_ms AS durationMs,created_at AS createdAt FROM application_logs ORDER BY id DESC LIMIT 100",
+        )
+        .all(),
+    ),
+  );
   app.get("/api/audit", requireHR, async (_req, res) =>
     res.json(
       await db
         .prepare(
-          "SELECT id,actor,action,employee_id AS employeeId,employee_name AS employeeName,created_at AS createdAt FROM audit ORDER BY id DESC LIMIT 100",
+          "SELECT a.id,actor,action,employee_id AS employeeId,employee_name AS employeeName,created_at AS createdAt,r.request_id AS requestId FROM audit a LEFT JOIN audit_requests r ON r.audit_id=a.id ORDER BY a.id DESC LIMIT 100",
         )
         .all(),
     ),
@@ -214,6 +336,19 @@ export function createApp(db: DB) {
       res: express.Response,
       _next: express.NextFunction,
     ) => {
+      const json = res.json.bind(res);
+      res.json = (body) =>
+        json({
+          ...body,
+          success: false,
+          code:
+            error instanceof AppError
+              ? error.code
+              : error instanceof ZodError
+                ? "VALIDATION_ERROR"
+                : "REQUEST_ERROR",
+          requestId: res.getHeader("X-Request-Id"),
+        });
       if (error instanceof ZodError)
         return res.status(400).json({
           error: "Please check the provided values.",
@@ -226,17 +361,12 @@ export function createApp(db: DB) {
         error.message.includes("UNIQUE constraint failed")
       )
         return res.status(409).json({
-          error: "That email address is already assigned to an employee.",
+          error: _req.path.startsWith("/api/auth")
+            ? "Registration could not be completed. Try signing in."
+            : "That email address is already assigned to an employee.",
         });
       if (error instanceof SyntaxError)
         return res.status(400).json({ error: "Invalid JSON body." });
-      console.error(
-        JSON.stringify({
-          level: "error",
-          requestId: res.getHeader("X-Request-Id"),
-          message: error instanceof Error ? error.message : "Unknown error",
-        }),
-      );
       res.status(500).json({
         error: "Something went wrong. Please try again.",
         requestId: res.getHeader("X-Request-Id"),

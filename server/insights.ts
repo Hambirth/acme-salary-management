@@ -10,34 +10,83 @@ type Row = {
   jobTitle: string;
   country: string;
   employmentType: string;
+  currency: string;
+  joiningDate: string;
 };
+export const fxRates: Record<string, number> = {
+  INR: 0.012,
+  USD: 1,
+  GBP: 1.27,
+  EUR: 1.09,
+  SGD: 0.74,
+  CAD: 0.73,
+};
+export const tenureAsOf = "2026-10-14";
+export function tenureBand(joiningDate: string, asOf = tenureAsOf) {
+  const start = new Date(joiningDate + "T00:00:00Z"),
+    end = new Date(asOf + "T00:00:00Z");
+  let years = end.getUTCFullYear() - start.getUTCFullYear();
+  if (
+    end.getUTCMonth() < start.getUTCMonth() ||
+    (end.getUTCMonth() === start.getUTCMonth() &&
+      end.getUTCDate() < start.getUTCDate())
+  )
+    years--;
+  return years < 1
+    ? "Under 1 year"
+    : years < 3
+      ? "1–2 years"
+      : years < 5
+        ? "3–4 years"
+        : years < 10
+          ? "5–9 years"
+          : "10+ years";
+}
 export async function insights(db: DB, raw: unknown, role: Role) {
   const q = parseQuery(raw, role);
-  const currency = q.currency || "INR";
+  const view = z
+    .object({ view: z.enum(["local", "usd"]).default("local") })
+    .parse(raw).view;
+  const normalized = view === "usd";
+  const currency = normalized ? "USD" : q.currency || "INR";
   const groupBy = z
     .object({
       groupBy: z
-        .enum(["department", "country", "jobTitle"])
+        .enum(["department", "country", "jobTitle", "employmentType"])
         .default("department"),
     })
     .parse(raw).groupBy;
-  const { where, params } = filterSql({ ...q, currency });
+  const { where, params } = filterSql({
+    ...q,
+    currency: normalized ? q.currency : currency,
+  });
   const rows = (await db
     .prepare(
-      "SELECT id,name,salary_minor AS salary,department,job_title AS jobTitle,country,employment_type AS employmentType FROM employees" +
+      "SELECT id,name,salary_minor AS salary,department,job_title AS jobTitle,country,employment_type AS employmentType,currency,joining_date AS joiningDate FROM employees" +
         where,
     )
     .all(...params)) as Row[];
+  const originalRows = rows.map((row) => ({ ...row }));
+  if (normalized)
+    for (const row of rows)
+      row.salary = Math.round(row.salary * fxRates[row.currency]);
   const grouped = new Map<string, number[]>();
   const peers = new Map<string, Row[]>();
   for (const row of rows) {
     const key = row[groupBy];
-    grouped.set(key, [...(grouped.get(key) ?? []), row.salary]);
-    const peerKey = `${row.country}|${row.jobTitle}|${row.employmentType}`;
-    peers.set(peerKey, [...(peers.get(peerKey) ?? []), row]);
+    const values = grouped.get(key) ?? [];
+    values.push(row.salary);
+    grouped.set(key, values);
+  }
+  for (const row of originalRows) {
+    const peerKey = `${row.country}|${row.currency}|${row.jobTitle}|${row.employmentType}`;
+    const values = peers.get(peerKey) ?? [];
+    values.push(row);
+    peers.set(peerKey, values);
   }
   const safe = (values: number[]) => {
     const s = summarize(values);
+    if (!s.count) return null;
     if (role === "HR_MANAGER") return s;
     if (s.count < 5) return null;
     const { min: _min, max: _max, ...aggregate } = s;
@@ -67,7 +116,9 @@ export async function insights(db: DB, raw: unknown, role: Role) {
           outliers.push({
             id: row.id,
             name: row.name,
-            salary: row.salary,
+            salary: normalized
+              ? Math.round(row.salary * fxRates[row.currency])
+              : row.salary,
             jobTitle: row.jobTitle,
             country: row.country,
             kind: row.salary < s.median ? "Below range" : "Above range",
@@ -84,7 +135,34 @@ export async function insights(db: DB, raw: unknown, role: Role) {
       (r) => r.salary >= step * i && (i === 5 || r.salary < step * (i + 1)),
     ).length,
   }));
+  const tenure = [
+    "Under 1 year",
+    "1–2 years",
+    "3–4 years",
+    "5–9 years",
+    "10+ years",
+  ]
+    .map((name) => ({
+      name,
+      stats: safe(
+        rows
+          .filter((row) => tenureBand(row.joiningDate) === name)
+          .map((row) => row.salary),
+      ),
+    }))
+    .filter((group) => group.stats !== null);
   return {
+    view,
+    approximate: normalized,
+    fx: normalized
+      ? {
+          rates: fxRates,
+          description:
+            "Illustrative static USD rates; not live or suitable for payroll.",
+        }
+      : null,
+    tenureAsOf,
+    tenure,
     currency,
     groupBy,
     summary,

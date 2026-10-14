@@ -1,14 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
-import {
-  api,
-  money,
-  number,
-  type User,
-  type Employee,
-  type Insights,
-  type Options,
-} from "../api";
-import { Heading, Select, Metric, Modal, Logo } from "../components";
+import { api } from "../api";
+import { ApplicationLogs } from "./ApplicationLogs";
+import { Heading } from "../components";
 export function Audit() {
   const [rows, setRows] = useState<
       {
@@ -18,6 +11,7 @@ export function Audit() {
         employeeId: number;
         employeeName: string;
         createdAt: string;
+        requestId?: string;
       }[]
     >([]),
     [error, setError] = useState(""),
@@ -55,6 +49,7 @@ export function Audit() {
                 <th>Employee</th>
                 <th>Changed by</th>
                 <th>When</th>
+                <th>Request ID</th>
               </tr>
             </thead>
             <tbody>
@@ -75,6 +70,9 @@ export function Audit() {
                   </td>
                   <td>{r.actor}</td>
                   <td>{new Date(r.createdAt).toLocaleString("en-GB")}</td>
+                  <td>
+                    <small>{r.requestId ?? "Earlier record"}</small>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -91,6 +89,7 @@ export function Audit() {
           Latest 100 changes. Seed data does not create activity entries.
         </div>
       </section>
+      <ApplicationLogs />
     </>
   );
 }

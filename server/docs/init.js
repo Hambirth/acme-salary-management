@@ -1,0 +1,1 @@
+window.onload = () => window.SwaggerUIBundle({url: "/api/openapi.json", dom_id: "#swagger-ui", requestInterceptor: request => { request.headers["X-Acme-Request"] = "1"; return request; }, supportedSubmitMethods: ["get"], validatorUrl: null});
