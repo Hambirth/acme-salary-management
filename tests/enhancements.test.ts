@@ -4,7 +4,25 @@ import { openDatabase, migrate } from "../server/db.ts";
 import { insights, tenureBand } from "../server/insights.ts";
 import { saveEmployee } from "../server/employees.ts";
 import { createLogger } from "../server/logging.ts";
+import { browserOrigin } from "../server/origin.ts";
 import { createApp } from "../server/app.ts";
+test("origin checking uses gateway headers only on Vercel and honors exact configured origin", () => {
+  const headers: Record<string, string> = {
+    host: "internal.example",
+    "x-forwarded-host": "public.example",
+    "x-forwarded-proto": "https",
+  };
+  const req = {
+    get: (name: string) => headers[name],
+    protocol: "http",
+  } as Parameters<typeof browserOrigin>[0];
+  assert.equal(browserOrigin(req, true, ""), "https://public.example");
+  assert.equal(browserOrigin(req, false, ""), "http://internal.example");
+  assert.equal(
+    browserOrigin(req, true, "https://configured.example"),
+    "https://configured.example",
+  );
+});
 
 test("tenure uses calendar anniversaries and explicit boundary bands", () => {
   assert.equal(tenureBand("2025-10-15"), "Under 1 year");

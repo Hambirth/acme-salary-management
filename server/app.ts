@@ -25,6 +25,7 @@ import {
 import { createLogger } from "./logging.ts";
 import { openApi } from "./openapi.ts";
 import { insights } from "./insights.ts";
+import { browserOrigin } from "./origin.ts";
 export function createApp(db: DB) {
   z.object({
     NODE_ENV: z.enum(["development", "test", "production"]).optional(),
@@ -70,8 +71,7 @@ export function createApp(db: DB) {
         });
     });
     const origin = req.headers.origin;
-    const allowedOrigin =
-      process.env.APP_ORIGIN || `${req.protocol}://${req.get("host")}`;
+    const allowedOrigin = browserOrigin(req);
     if (origin && origin !== allowedOrigin)
       return next(new AppError(403, "Origin is not allowed."));
     if (req.path.startsWith("/api")) res.setHeader("Cache-Control", "no-store");

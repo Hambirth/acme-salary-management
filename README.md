@@ -58,7 +58,7 @@ pnpm format:check
 pnpm build
 ```
 
-The core suite has 30 backend tests plus 5 frontend tests and 6 desktop/mobile browser scenarios covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
+The core suite has 31 backend tests plus 5 frontend tests and 6 desktop/mobile browser scenarios covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
 
 ## Deployment
 
