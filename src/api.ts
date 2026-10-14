@@ -66,7 +66,14 @@ export async function api<T>(
     },
   });
   if (response.status === 204) return undefined as T;
-  const body = await response.json();
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(
+      "The service is temporarily unavailable. Please try again.",
+    );
+  }
   if (!response.ok) {
     if (
       response.status === 401 &&

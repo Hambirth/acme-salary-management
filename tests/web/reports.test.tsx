@@ -105,3 +105,24 @@ test("Login displays API errors without authenticating", async () => {
   );
   expect(onLogin).not.toHaveBeenCalled();
 });
+test("A non-JSON hosting error shows a readable retry message", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: async () => {
+        throw new SyntaxError("Unexpected token");
+      },
+    }),
+  );
+  const onLogin = vi.fn();
+  render(<Login onLogin={onLogin} />);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Sign in to workspace →" }),
+  );
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "The service is temporarily unavailable. Please try again.",
+  );
+  expect(onLogin).not.toHaveBeenCalled();
+});
