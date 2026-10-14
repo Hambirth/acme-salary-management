@@ -2,6 +2,8 @@
 
 A salary management workspace for ACME's HR team: manage 10,000 employees across six countries and understand annual base compensation without mixing currencies.
 
+Live assessment demo: https://acme-salary-management-ten.vercel.app/ .
+
 ## Run locally
 
 Requires Node.js 24.19 or later and pnpm 11.25. Local SQLite is accessed through the official libSQL client; no external database service is required for local development.
@@ -20,7 +22,7 @@ Open http://localhost:4000 . For development, `pnpm dev` runs the API on port 40
 | HR manager | hr@acme.example     | AssessmentDemo42! |
 | Viewer     | viewer@acme.example | AssessmentDemo42! |
 
-These are intentionally public demo accounts and all employee records are synthetic. Use a different `DEMO_PASSWORD` when seeding a hosted environment; enter that password in the login form. Never load real employee data into a publicly accessible demo.
+These are intentionally public demo accounts and all employee records are synthetic. The published synthetic assessment demo intentionally uses these public credentials. For any deployment containing non-demo data, provision private accounts and use a different `DEMO_PASSWORD`; enter that password in the login form. Never load real employee data into a publicly accessible demo.
 
 ## Included
 
@@ -40,7 +42,7 @@ pnpm format:check
 pnpm build
 ```
 
-The core suite has 23 passing tests covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
+The core suite has 24 passing tests covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
 
 ## Deployment
 
@@ -50,7 +52,7 @@ The production server serves the built React application and API from one origin
 
 `Dockerfile` provides an alternative container deployment. SQLite requires a persistent disk and one application instance; an ephemeral serverless function is unsuitable. For multiple instances, migrate to PostgreSQL and shared rate limiting.
 
-The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions verification passed on commit 11468d4. Public application deployment is pending Vercel and Turso account access. A public URL and recorded walkthrough remain submission steps. See `docs/demo-script.md` for the walkthrough.
+The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions verification passed on commit 11468d4. The public app is deployed and verified at https://acme-salary-management-ten.vercel.app/ using Vercel Hobby and Turso Starter (free; no payment method configured). The live URL is ready. A recorded walkthrough remains a submission step. See `docs/demo-script.md` for the walkthrough.
 
 ## Documentation
 
