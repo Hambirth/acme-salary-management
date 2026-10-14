@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>ACME Salary Manager</title>
+  <rect width="64" height="64" rx="15" fill="#d5e5b1"/>
+  <path fill="#102c27" fill-rule="evenodd" d="M30 15c-9 0-15 4-16 12h10c1-3 3-4 6-4 4 0 6 2 6 5v1h-7c-10 0-16 4-16 12 0 7 5 12 13 12 5 0 9-2 11-5v4h10V29c0-9-6-14-17-14Zm6 22v2c0 4-3 7-7 7-3 0-5-2-5-4 0-3 2-5 7-5h5Z"/>
+  <circle cx="54" cy="47" r="5" fill="#102c27"/>
+</svg>
