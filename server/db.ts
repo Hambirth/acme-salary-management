@@ -13,6 +13,16 @@ import {
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 export type Row = Record<string, unknown>;
+export function normalizeRows(result: {
+  columns: string[];
+  rows: readonly ArrayLike<unknown>[];
+}): Row[] {
+  return result.rows.map((row) =>
+    Object.fromEntries(
+      result.columns.map((column, index) => [column, row[index]]),
+    ),
+  );
+}
 export type DB = {
   prepare(sql: string): {
     get(...args: InValue[]): Promise<Row | undefined>;
@@ -37,11 +47,10 @@ function wrap(
     prepare(sql) {
       return {
         async get(...args) {
-          return (await client.execute({ sql, args })).rows[0] as
-            Row | undefined;
+          return normalizeRows(await client.execute({ sql, args }))[0];
         },
         async all(...args) {
-          return (await client.execute({ sql, args })).rows as Row[];
+          return normalizeRows(await client.execute({ sql, args }));
         },
         async run(...args) {
           const result = await client.execute({ sql, args });
