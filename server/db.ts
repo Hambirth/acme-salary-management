@@ -1,9 +1,11 @@
-import { DatabaseSync } from 'node:sqlite';
-import { mkdirSync } from 'node:fs';
-import { dirname } from 'node:path';
-export function openDatabase(path=process.env.DATABASE_PATH??'./data/acme.sqlite') {
-  if(path!==':memory:')mkdirSync(dirname(path),{recursive:true});
-  const db=new DatabaseSync(path);
+import { DatabaseSync } from "node:sqlite";
+import { mkdirSync } from "node:fs";
+import { dirname } from "node:path";
+export function openDatabase(
+  path = process.env.DATABASE_PATH ?? "./data/acme.sqlite",
+) {
+  if (path !== ":memory:") mkdirSync(dirname(path), { recursive: true });
+  const db = new DatabaseSync(path);
   db.exec(`PRAGMA foreign_keys=ON; PRAGMA journal_mode=WAL; PRAGMA busy_timeout=5000;
     CREATE TABLE IF NOT EXISTS schema_migrations(version INTEGER PRIMARY KEY);
     CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,email TEXT NOT NULL UNIQUE,name TEXT NOT NULL,password_hash TEXT NOT NULL,role TEXT NOT NULL CHECK(role IN ('HR_MANAGER','VIEWER')));

@@ -1,8 +1,86 @@
-export type User={id:number;name:string;email:string;role:'HR_MANAGER'|'VIEWER'};
-export type Employee={id:number;name:string;email:string;country:string;currency:string;department:string;jobTitle:string;employmentType:string;salaryMinor?:number;joiningDate:string;version:number};
-export type Stats={count:number;total:number;average:number;median:number;min?:number;max?:number;p25:number;p75:number};
-export type Insights={currency:string;summary:Stats|null;groups:{name:string;stats:Stats}[];bands:{label:string;count:number}[];outliers:{id:number;name:string;salary:number;jobTitle:string;country:string;kind:string}[];outlierCount:number;filteredHeadcount:number;organizationHeadcount:number};
-export type Options={countries:Record<string,string>;departments:string[];jobTitles:string[]};
-export async function api<T>(path:string,options:RequestInit={}):Promise<T>{const response=await fetch('/api'+path,{...options,headers:{'Content-Type':'application/json','X-Acme-Request':'1',...options.headers}});if(response.status===204)return undefined as T;const body=await response.json();if(!response.ok){if(response.status===401&&path!=='/auth/login'&&path!=='/auth/me')window.dispatchEvent(new Event('session-expired'));throw new Error(body.fields?.join('\n')??body.error??'Request failed.');}return body;}
-export function money(minor:number,currency='INR',compact=false){return new Intl.NumberFormat('en-IN',{style:'currency',currency,maximumFractionDigits:compact?1:0,notation:compact?'compact':'standard'}).format(minor/100);}
-export const number=(value:number)=>new Intl.NumberFormat('en-IN').format(value);
+export type User = {
+  id: number;
+  name: string;
+  email: string;
+  role: "HR_MANAGER" | "VIEWER";
+};
+export type Employee = {
+  id: number;
+  name: string;
+  email: string;
+  country: string;
+  currency: string;
+  department: string;
+  jobTitle: string;
+  employmentType: string;
+  salaryMinor?: number;
+  joiningDate: string;
+  version: number;
+};
+export type Stats = {
+  count: number;
+  total: number;
+  average: number;
+  median: number;
+  min?: number;
+  max?: number;
+  p25: number;
+  p75: number;
+};
+export type Insights = {
+  currency: string;
+  summary: Stats | null;
+  groups: { name: string; stats: Stats }[];
+  bands: { label: string; count: number }[];
+  outliers: {
+    id: number;
+    name: string;
+    salary: number;
+    jobTitle: string;
+    country: string;
+    kind: string;
+  }[];
+  outlierCount: number;
+  filteredHeadcount: number;
+  organizationHeadcount: number;
+};
+export type Options = {
+  countries: Record<string, string>;
+  departments: string[];
+  jobTitles: string[];
+};
+export async function api<T>(
+  path: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const response = await fetch("/api" + path, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "X-Acme-Request": "1",
+      ...options.headers,
+    },
+  });
+  if (response.status === 204) return undefined as T;
+  const body = await response.json();
+  if (!response.ok) {
+    if (
+      response.status === 401 &&
+      path !== "/auth/login" &&
+      path !== "/auth/me"
+    )
+      window.dispatchEvent(new Event("session-expired"));
+    throw new Error(body.fields?.join("\n") ?? body.error ?? "Request failed.");
+  }
+  return body;
+}
+export function money(minor: number, currency = "INR", compact = false) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: compact ? 1 : 2,
+    notation: compact ? "compact" : "standard",
+  }).format(minor / 100);
+}
+export const number = (value: number) =>
+  new Intl.NumberFormat("en-IN").format(value);
