@@ -11,3 +11,5 @@
 The initial Windows sandbox blocked Vite's directory access; running the same build with approved filesystem access succeeded. The native Node TypeScript runtime is used for backend scripts to avoid an unnecessary transpiler runtime. The database adaptation for Vercel uses the official asynchronous libSQL client; the full suite passed again after that change. Remote Turso connectivity and Vercel routing are prepared but cannot be verified without account access.
 
 Not yet verified: public hosting, remote repository access, video recording, sustained concurrent-load capacity, backup/restore and multi-instance operation. There is no claim of browser E2E automation in CI; core API workflows are automated through HTTP integration tests.
+
+GitHub publication: https://github.com/Hambirth/acme-salary-management . Commit 11468d4 passed the GitHub Actions verification workflow on Linux: https://github.com/Hambirth/acme-salary-management/actions/runs/38549461192 . Vercel and Turso dashboard sign-in is pending; no public app deployment is claimed.

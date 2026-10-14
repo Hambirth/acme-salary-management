@@ -50,7 +50,7 @@ The production server serves the built React application and API from one origin
 
 `Dockerfile` provides an alternative container deployment. SQLite requires a persistent disk and one application instance; an ephemeral serverless function is unsuitable. For multiple instances, migrate to PostgreSQL and shared rate limiting.
 
-The repository has not yet been pushed to a remote or deployed to a public hosting account. A public URL and recorded walkthrough remain submission steps. See `docs/demo-script.md` for the walkthrough.
+The source and incremental history are published at https://github.com/Hambirth/acme-salary-management . GitHub Actions verification passed on commit 11468d4. Public application deployment is pending Vercel and Turso account access. A public URL and recorded walkthrough remain submission steps. See `docs/demo-script.md` for the walkthrough.
 
 ## Documentation
 
