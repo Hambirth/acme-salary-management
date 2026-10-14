@@ -49,8 +49,8 @@ export function createApp(db: DB) {
       return next(new AppError(403, "Missing request protection header."));
     next();
   });
-  app.get("/api/health", (_req, res) => {
-    db.prepare("SELECT 1").get();
+  app.get("/api/health", async (_req, res) => {
+    await db.prepare("SELECT 1").get();
     res.json({ status: "ok" });
   });
   const dummyHash = hashPassword("invalid-account-dummy-password");
@@ -63,24 +63,27 @@ export function createApp(db: DB) {
       legacyHeaders: false,
       message: { error: "Too many login attempts. Try again in 15 minutes." },
     }),
-    (req, res) => {
+    async (req, res) => {
       const body = z
         .object({
           email: z.email().max(150),
           password: z.string().min(1).max(200),
         })
         .parse(req.body);
-      const user = db
+      const user = (await db
         .prepare("SELECT * FROM users WHERE email=?")
-        .get(body.email.toLowerCase()) as
-        (User & { password_hash: string }) | undefined;
+        .get(body.email.toLowerCase())) as
+        | (User & {
+            password_hash: string;
+          })
+        | undefined;
       const valid = verifyPassword(
         body.password,
         user?.password_hash ?? dummyHash,
       );
       if (!user || !valid)
         throw new AppError(401, "Email or password is incorrect.");
-      const token = createSession(db, user.id);
+      const token = await createSession(db, user.id);
       res.cookie("acme_session", token, {
         httpOnly: true,
         sameSite: "strict",
@@ -98,30 +101,34 @@ export function createApp(db: DB) {
   );
   app.use("/api", authenticate(db));
   app.get("/api/auth/me", (req, res) => res.json(req.user));
-  app.post("/api/auth/logout", (req, res) => {
-    db.prepare("DELETE FROM sessions WHERE token_hash=?").run(
-      tokenHash(req.sessionToken!),
-    );
+  app.post("/api/auth/logout", async (req, res) => {
+    await db
+      .prepare("DELETE FROM sessions WHERE token_hash=?")
+      .run(tokenHash(req.sessionToken!));
     res.clearCookie("acme_session", { path: "/" });
     res.status(204).end();
   });
-  app.get("/api/options", (_req, res) =>
+  app.get("/api/options", async (_req, res) =>
     res.json({
       countries,
-      departments: db
-        .prepare(
-          "SELECT DISTINCT department FROM employees ORDER BY department",
-        )
-        .all()
-        .map((r) => r.department),
-      jobTitles: db
-        .prepare("SELECT DISTINCT job_title FROM employees ORDER BY job_title")
-        .all()
-        .map((r) => r.job_title),
+      departments: (
+        await db
+          .prepare(
+            "SELECT DISTINCT department FROM employees ORDER BY department",
+          )
+          .all()
+      ).map((r) => r.department),
+      jobTitles: (
+        await db
+          .prepare(
+            "SELECT DISTINCT job_title FROM employees ORDER BY job_title",
+          )
+          .all()
+      ).map((r) => r.job_title),
     }),
   );
-  app.get("/api/employees/export", (req, res) => {
-    const result = listEmployees(db, req.query, req.user!.role, true);
+  app.get("/api/employees/export", async (req, res) => {
+    const result = await listEmployees(db, req.query, req.user!.role, true);
     const keys = [
       "name",
       "email",
@@ -141,8 +148,11 @@ export function createApp(db: DB) {
             csvCell(
               key === "annualSalary"
                 ? (
-                    (row as unknown as { salaryMinor: number }).salaryMinor /
-                    100
+                    (
+                      row as unknown as {
+                        salaryMinor: number;
+                      }
+                    ).salaryMinor / 100
                   ).toFixed(2)
                 : (row as unknown as Record<string, unknown>)[key],
             ),
@@ -155,22 +165,24 @@ export function createApp(db: DB) {
       .attachment("acme-employees.csv")
       .send("\uFEFF" + lines.join("\r\n"));
   });
-  app.get("/api/employees", (req, res) =>
-    res.json(listEmployees(db, req.query, req.user!.role)),
+  app.get("/api/employees", async (req, res) =>
+    res.json(await listEmployees(db, req.query, req.user!.role)),
   );
   const id = (value: unknown) =>
     z.coerce.number().int().positive().parse(value);
-  app.get("/api/employees/:id", (req, res) =>
-    res.json(redact(getEmployee(db, id(req.params.id)), req.user!.role)),
+  app.get("/api/employees/:id", async (req, res) =>
+    res.json(redact(await getEmployee(db, id(req.params.id)), req.user!.role)),
   );
-  app.post("/api/employees", requireHR, (req, res) =>
-    res.status(201).json(saveEmployee(db, req.body, req.user!.email)),
+  app.post("/api/employees", requireHR, async (req, res) =>
+    res.status(201).json(await saveEmployee(db, req.body, req.user!.email)),
   );
-  app.put("/api/employees/:id", requireHR, (req, res) =>
-    res.json(saveEmployee(db, req.body, req.user!.email, id(req.params.id))),
+  app.put("/api/employees/:id", requireHR, async (req, res) =>
+    res.json(
+      await saveEmployee(db, req.body, req.user!.email, id(req.params.id)),
+    ),
   );
-  app.delete("/api/employees/:id", requireHR, (req, res) => {
-    deleteEmployee(
+  app.delete("/api/employees/:id", requireHR, async (req, res) => {
+    await deleteEmployee(
       db,
       id(req.params.id),
       id(req.body?.version),
@@ -178,12 +190,12 @@ export function createApp(db: DB) {
     );
     res.status(204).end();
   });
-  app.get("/api/insights", (req, res) =>
-    res.json(insights(db, req.query, req.user!.role)),
+  app.get("/api/insights", async (req, res) =>
+    res.json(await insights(db, req.query, req.user!.role)),
   );
-  app.get("/api/audit", requireHR, (_req, res) =>
+  app.get("/api/audit", requireHR, async (_req, res) =>
     res.json(
-      db
+      await db
         .prepare(
           "SELECT id,actor,action,employee_id AS employeeId,employee_name AS employeeName,created_at AS createdAt FROM audit ORDER BY id DESC LIMIT 100",
         )

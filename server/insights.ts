@@ -11,7 +11,7 @@ type Row = {
   country: string;
   employmentType: string;
 };
-export function insights(db: DB, raw: unknown, role: Role) {
+export async function insights(db: DB, raw: unknown, role: Role) {
   const q = parseQuery(raw, role);
   const currency = q.currency || "INR";
   const groupBy = z
@@ -22,12 +22,12 @@ export function insights(db: DB, raw: unknown, role: Role) {
     })
     .parse(raw).groupBy;
   const { where, params } = filterSql({ ...q, currency });
-  const rows = db
+  const rows = (await db
     .prepare(
       "SELECT id,name,salary_minor AS salary,department,job_title AS jobTitle,country,employment_type AS employmentType FROM employees" +
         where,
     )
-    .all(...params) as Row[];
+    .all(...params)) as Row[];
   const grouped = new Map<string, number[]>();
   const peers = new Map<string, Row[]>();
   for (const row of rows) {
@@ -94,7 +94,9 @@ export function insights(db: DB, raw: unknown, role: Role) {
     outlierCount: role === "HR_MANAGER" ? outliers.length : 0,
     filteredHeadcount: rows.length,
     organizationHeadcount: (
-      db.prepare("SELECT count(*) AS n FROM employees").get() as { n: number }
+      (await db.prepare("SELECT count(*) AS n FROM employees").get()) as {
+        n: number;
+      }
     ).n,
   };
 }

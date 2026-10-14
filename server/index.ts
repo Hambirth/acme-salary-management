@@ -1,6 +1,6 @@
 import { openDatabase } from "./db.ts";
 import { createApp } from "./app.ts";
-const db = openDatabase();
+const db = await openDatabase();
 const port = Number(process.env.PORT ?? 4000);
 const server = createApp(db).listen(port, "0.0.0.0", () =>
   console.log(`ACME API listening on http://localhost:${port}`),

@@ -69,7 +69,7 @@ export function redact(employee: Employee, role: Role) {
   const { salaryMinor: _salary, ...safe } = employee;
   return safe;
 }
-export function listEmployees(
+export async function listEmployees(
   db: DB,
   raw: unknown,
   role: Role,
@@ -84,19 +84,21 @@ export function listEmployees(
   }[q.sort];
   const total = Number(
     (
-      db
+      (await db
         .prepare("SELECT count(*) AS count FROM employees" + where)
-        .get(...params) as { count: number }
+        .get(...params)) as {
+        count: number;
+      }
     ).count,
   );
-  const rows = db
+  const rows = (await db
     .prepare(
       `SELECT ${columns} FROM employees${where} ORDER BY ${order} ${q.direction},id ${q.direction}${exportAll ? "" : " LIMIT ? OFFSET ?"}`,
     )
     .all(
       ...params,
       ...(exportAll ? [] : [q.pageSize, (q.page - 1) * q.pageSize]),
-    ) as Employee[];
+    )) as Employee[];
   return {
     items: rows.map((e) => redact(e, role)),
     total,
@@ -104,14 +106,14 @@ export function listEmployees(
     pageSize: q.pageSize,
   };
 }
-export function getEmployee(db: DB, id: number) {
-  const row = db
+export async function getEmployee(db: DB, id: number) {
+  const row = (await db
     .prepare(`SELECT ${columns} FROM employees WHERE id=?`)
-    .get(id) as Employee | undefined;
+    .get(id)) as Employee | undefined;
   if (!row) throw new AppError(404, "Employee not found.");
   return row;
 }
-export function saveEmployee(
+export async function saveEmployee(
   db: DB,
   body: unknown,
   actor: string,
@@ -129,14 +131,15 @@ export function saveEmployee(
     minorUnits(input.salary),
     input.joiningDate,
   ];
-  db.exec("BEGIN IMMEDIATE");
+  const transaction = await db.transaction();
+  const tx = transaction.db;
   try {
-    const before = id ? getEmployee(db, id) : null;
+    const before = id ? await getEmployee(tx, id) : null;
     if (id) {
       const version = z
         .object({ version: z.number().int().positive() })
         .parse(body).version;
-      const result = db
+      const result = await tx
         .prepare(
           "UPDATE employees SET name=?,email=?,country=?,currency=?,department=?,job_title=?,employment_type=?,salary_minor=?,joining_date=?,version=version+1 WHERE id=? AND version=?",
         )
@@ -148,39 +151,44 @@ export function saveEmployee(
         );
     } else
       id = Number(
-        db
-          .prepare(
-            "INSERT INTO employees(name,email,country,currency,department,job_title,employment_type,salary_minor,joining_date) VALUES(?,?,?,?,?,?,?,?,?)",
-          )
-          .run(...values).lastInsertRowid,
+        (
+          await tx
+            .prepare(
+              "INSERT INTO employees(name,email,country,currency,department,job_title,employment_type,salary_minor,joining_date) VALUES(?,?,?,?,?,?,?,?,?)",
+            )
+            .run(...values)
+        ).lastInsertRowid,
       );
-    const after = getEmployee(db, id);
-    db.prepare(
-      "INSERT INTO audit(actor,action,employee_id,employee_name,details) VALUES(?,?,?,?,?)",
-    ).run(
-      actor,
-      before ? "Updated" : "Created",
-      id,
-      input.name,
-      JSON.stringify({ before, after }),
-    );
-    db.exec("COMMIT");
+    const after = await getEmployee(tx, id);
+    await tx
+      .prepare(
+        "INSERT INTO audit(actor,action,employee_id,employee_name,details) VALUES(?,?,?,?,?)",
+      )
+      .run(
+        actor,
+        before ? "Updated" : "Created",
+        id,
+        input.name,
+        JSON.stringify({ before, after }),
+      );
+    await transaction.commit();
     return after;
   } catch (error) {
-    db.exec("ROLLBACK");
+    await transaction.rollback();
     throw error;
   }
 }
-export function deleteEmployee(
+export async function deleteEmployee(
   db: DB,
   id: number,
   version: number,
   actor: string,
 ) {
-  db.exec("BEGIN IMMEDIATE");
+  const transaction = await db.transaction();
+  const tx = transaction.db;
   try {
-    const before = getEmployee(db, id);
-    const result = db
+    const before = await getEmployee(tx, id);
+    const result = await tx
       .prepare("DELETE FROM employees WHERE id=? AND version=?")
       .run(id, version);
     if (!result.changes)
@@ -188,12 +196,14 @@ export function deleteEmployee(
         409,
         "This employee has changed. Reload before deleting.",
       );
-    db.prepare(
-      "INSERT INTO audit(actor,action,employee_id,employee_name,details) VALUES(?,?,?,?,?)",
-    ).run(actor, "Deleted", id, before.name, JSON.stringify({ before }));
-    db.exec("COMMIT");
+    await tx
+      .prepare(
+        "INSERT INTO audit(actor,action,employee_id,employee_name,details) VALUES(?,?,?,?,?)",
+      )
+      .run(actor, "Deleted", id, before.name, JSON.stringify({ before }));
+    await transaction.commit();
   } catch (error) {
-    db.exec("ROLLBACK");
+    await transaction.rollback();
     throw error;
   }
 }

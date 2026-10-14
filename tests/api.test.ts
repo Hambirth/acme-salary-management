@@ -4,7 +4,7 @@ import type { Server } from "node:http";
 import { openDatabase } from "../server/db.ts";
 import { createApp } from "../server/app.ts";
 import { seed } from "../server/seed.ts";
-const db = openDatabase(":memory:");
+const db = await openDatabase(":memory:");
 let server: Server;
 let base: string;
 let hrCookie: string;
@@ -34,10 +34,16 @@ async function request(
   });
 }
 before(async () => {
-  seed(db);
+  await seed(db);
   server = createApp(db).listen(0, "127.0.0.1");
   await new Promise<void>((resolve) => server.once("listening", resolve));
-  base = `http://127.0.0.1:${(server.address() as { port: number }).port}/api`;
+  base = `http://127.0.0.1:${
+    (
+      server.address() as {
+        port: number;
+      }
+    ).port
+  }/api`;
   for (const role of ["hr", "viewer"]) {
     const response = await request("/auth/login", {
       method: "POST",
@@ -54,13 +60,16 @@ after(async () => {
   await new Promise<void>((resolve) => server.close(() => resolve()));
   db.close();
 });
-test("seed creates exactly 10,000 and refuses to overwrite", () => {
+test("seed creates exactly 10,000 and refuses to overwrite", async () => {
   assert.equal(
-    (db.prepare("SELECT count(*) AS n FROM employees").get() as { n: number })
-      .n,
+    (
+      (await db.prepare("SELECT count(*) AS n FROM employees").get()) as {
+        n: number;
+      }
+    ).n,
     10000,
   );
-  assert.throws(() => seed(db), /overwrite/);
+  await assert.rejects(async () => await seed(db), /overwrite/);
 });
 test("unauthenticated requests cannot access employee data", async () => {
   assert.equal((await request("/employees", { cookie: "" })).status, 401);
@@ -127,23 +136,41 @@ test("cross-site style writes without protection header are rejected", async () 
 });
 test("insights preserve currency and agree with the database", async () => {
   const d = await (await request("/insights?currency=INR")).json();
-  const expected = db
+  const expected = (await db
     .prepare(
       "SELECT count(*) AS n,sum(salary_minor) AS total FROM employees WHERE currency='INR'",
     )
-    .get() as { n: number; total: number };
+    .get()) as {
+    n: number;
+    total: number;
+  };
   assert.equal(d.currency, "INR");
   assert.equal(d.summary.count, expected.n);
   assert.equal(d.summary.total, expected.total);
   assert.equal(
     d.groups.reduce(
-      (n: number, g: { stats: { count: number } }) => n + g.stats.count,
+      (
+        n: number,
+        g: {
+          stats: {
+            count: number;
+          };
+        },
+      ) => n + g.stats.count,
       0,
     ),
     expected.n,
   );
   assert.equal(
-    d.bands.reduce((n: number, b: { count: number }) => n + b.count, 0),
+    d.bands.reduce(
+      (
+        n: number,
+        b: {
+          count: number;
+        },
+      ) => n + b.count,
+      0,
+    ),
     expected.n,
   );
 });
@@ -157,8 +184,12 @@ test("viewer insights omit extremes and employee outliers", async () => {
   assert.deepEqual(d.bands, []);
   assert.ok(
     d.groups.every(
-      (g: { stats: { count: number; min?: number } }) =>
-        g.stats.count >= 5 && !("min" in g.stats),
+      (g: {
+        stats: {
+          count: number;
+          min?: number;
+        };
+      }) => g.stats.count >= 5 && !("min" in g.stats),
     ),
   );
 });

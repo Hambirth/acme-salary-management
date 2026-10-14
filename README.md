@@ -4,7 +4,7 @@ A salary management workspace for ACME's HR team: manage 10,000 employees across
 
 ## Run locally
 
-Requires Node.js 24.19 or later and pnpm 11.25. SQLite is built into Node; no external database service is required.
+Requires Node.js 24.19 or later and pnpm 11.25. Local SQLite is accessed through the official libSQL client; no external database service is required for local development.
 
 ```sh
 pnpm install
@@ -40,9 +40,11 @@ pnpm format:check
 pnpm build
 ```
 
-The initial core suite has 20 passing tests covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
+The core suite has 23 passing tests covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
 
 ## Deployment
+
+For your requested free Vercel deployment, follow [the GitHub + Vercel + Turso workflow](docs/deployment.md). The hosted database keeps edits durable across function restarts; local SQLite remains available for development.
 
 The production server serves the built React application and API from one origin. Build with `pnpm install --frozen-lockfile && pnpm build`, then start with `node server/bootstrap.ts`. Configure `NODE_ENV=production`, `DATABASE_PATH=/data/acme.sqlite`, `PORT` as assigned by the host, and `DEMO_PASSWORD`. A persistent writable disk mounted at `/data` is essential. `bootstrap.ts` initializes only an empty database and otherwise preserves existing records. TLS must terminate at the host. Set `TRUST_PROXY=1` only for a known single-hop reverse proxy; this makes client-IP rate limits accurate.
 
@@ -61,4 +63,4 @@ The repository has not yet been pushed to a remote or deployed to a public hosti
 
 ## Deliberate limits
 
-This is a single-organization compensation application, not a payroll engine. It has no taxes, payment execution, bonuses, live FX, SSO, self-registration or password reset. Joining dates and salaries are synthetic; pay differences are descriptive and must not be used as automatic employment decisions. Audit records retain prior employee values, so real deployments need retention and privacy policies. Minimum-group suppression reduces direct disclosure but is not formal protection against inference across overlapping analytics queries. Synchronous SQLite and scrypt are pragmatic for this assessment scale, not a claim of unlimited concurrent traffic.
+This is a single-organization compensation application, not a payroll engine. It has no taxes, payment execution, bonuses, live FX, SSO, self-registration or password reset. Joining dates and salaries are synthetic; pay differences are descriptive and must not be used as automatic employment decisions. Audit records retain prior employee values, so real deployments need retention and privacy policies. Minimum-group suppression reduces direct disclosure but is not formal protection against inference across overlapping analytics queries. The database API is asynchronous and supports local SQLite or remote libSQL; scrypt still runs synchronously. The login rate limiter is per instance. These are not claims of unlimited concurrent traffic.

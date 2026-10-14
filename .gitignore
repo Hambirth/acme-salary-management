@@ -6,3 +6,8 @@ data/
 coverage/
 playwright-report/
 test-results/
+
+.vercel/
+.env.*
+!.env.example
+.pnpm-store/

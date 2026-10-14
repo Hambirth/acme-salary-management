@@ -2,14 +2,17 @@ import { pathToFileURL } from "node:url";
 import { openDatabase, type DB } from "./db.ts";
 import { countries } from "./domain.ts";
 import { hashPassword } from "./auth.ts";
-export function seed(
+export async function seed(
   db: DB,
   password = process.env.DEMO_PASSWORD ?? "AssessmentDemo42!",
 ) {
   if (
     Number(
-      (db.prepare("SELECT count(*) AS n FROM employees").get() as { n: number })
-        .n,
+      (
+        (await db.prepare("SELECT count(*) AS n FROM employees").get()) as {
+          n: number;
+        }
+      ).n,
     ) > 0
   )
     throw new Error(
@@ -88,11 +91,12 @@ export function seed(
     state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
     return state / 4294967296;
   };
-  db.exec("BEGIN");
+  const transaction = await db.transaction();
+  const tx = transaction.db;
+  const statements: import("@libsql/client").InStatement[] = [];
   try {
-    const statement = db.prepare(
-      "INSERT INTO employees(name,email,country,currency,department,job_title,employment_type,salary_minor,joining_date) VALUES(?,?,?,?,?,?,?,?,?)",
-    );
+    const insertSql =
+      "INSERT INTO employees(name,email,country,currency,department,job_title,employment_type,salary_minor,joining_date) VALUES(?,?,?,?,?,?,?,?,?)";
     for (let i = 0; i < 10000; i++) {
       const c = Math.floor(random() * 6),
         d = Math.floor(random() * 8);
@@ -112,36 +116,41 @@ export function seed(
       )
         .toISOString()
         .slice(0, 10);
-      statement.run(
-        name,
-        `employee${String(i + 1).padStart(5, "0")}@acme.example`,
-        countryNames[c],
-        countries[countryNames[c]],
-        departments[d],
-        titles[d],
-        i % 17 === 0 ? "Contract" : i % 23 === 0 ? "Part-time" : "Full-time",
-        annual * 100,
-        date,
-      );
+      statements.push({
+        sql: insertSql,
+        args: [
+          name,
+          `employee${String(i + 1).padStart(5, "0")}@acme.example`,
+          countryNames[c],
+          countries[countryNames[c]],
+          departments[d],
+          titles[d],
+          i % 17 === 0 ? "Contract" : i % 23 === 0 ? "Part-time" : "Full-time",
+          annual * 100,
+          date,
+        ],
+      });
     }
-    const user = db.prepare(
+    for (let offset = 0; offset < statements.length; offset += 500)
+      await tx.batch(statements.slice(offset, offset + 500));
+    const user = tx.prepare(
       "INSERT INTO users(email,name,password_hash,role) VALUES(?,?,?,?)",
     );
-    user.run(
+    await user.run(
       "hr@acme.example",
-      "Ashif · HR Manager",
+      "Asif · HR Manager",
       hashPassword(password),
       "HR_MANAGER",
     );
-    user.run(
+    await user.run(
       "viewer@acme.example",
       "Demo Viewer",
       hashPassword(password),
       "VIEWER",
     );
-    db.exec("COMMIT");
+    await transaction.commit();
   } catch (error) {
-    db.exec("ROLLBACK");
+    await transaction.rollback();
     throw error;
   }
 }
@@ -149,9 +158,9 @@ if (
   process.argv[1] &&
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
-  const db = openDatabase();
+  const db = await openDatabase();
   try {
-    seed(db);
+    await seed(db);
     console.log(
       "Seeded exactly 10,000 synthetic employees and two demo accounts.",
     );
