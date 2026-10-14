@@ -39,3 +39,7 @@ A final browser login received one transient non-JSON hosting error; the next at
 At the user's request, the latest `docs/demo.mp4` is a fresh 40-section walkthrough of the current live app, including its new title and branding. The verified duration is 6m07s (4,380,980 bytes, H.264 MP4, captions, no voiceover). All video frames decode successfully and all 40 sections were sampled and visually reviewed. Exact timestamps are in `docs/demo-chapters.md`.
 
 The recording shows HR login/reports, local and approximate USD views, group statistics/tenure/outliers, search/filters/sort/pages/CSV, exact-cent employee creation/update/deletion, correlated audit/logs, Swagger HTTP 200, registration options, Viewer salary-free UI/API, audit HTTP 403, protected/unknown pages, logout, AI workflow and passing CI. The temporary fixture was removed; the recorded Viewer API response reports exactly 10,000 employees.
+
+## Login and account creation update
+
+Removed the Explore-the-demo panel, public password display and prefilled credentials from the login UI. The Create-an-account flow explicitly offers Read-only viewer and HR manager, defaults to Viewer and describes the selected role's access. Updated frontend and desktop/mobile tests cover both successful account types and their resulting permissions. Current suite: 31 backend tests, 7 frontend tests, 8 browser scenarios. The previously recorded video reflects the login page before this UI update; public credentials remain in the submission README for reviewers.

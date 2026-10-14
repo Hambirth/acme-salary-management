@@ -39,7 +39,7 @@ These are intentionally public demo accounts and all employee records are synthe
 - Pay versus completed years of tenure, with a fixed, explicitly returned assessment date of 2026-10-14.
 - Approximate USD view using illustrative static rates, labeled in the UI/API. Local-currency reporting remains the default. Peer detection always uses original-currency groups.
 - Job-title and currency directory filters; job-title dashboard filter; country, department, job title and employment-type grouping.
-- Demo registration at `/register`, defaulting to Viewer with an optional HR role. Only synthetic demo data is permitted; real deployments must replace open HR registration with invitations/approval.
+- Account creation at `/register` for read-only Viewers and HR managers, with Viewer selected by default. The sign-in page has blank fields and displays no demo credentials. Only synthetic demo data is permitted; real deployments must replace open HR registration with invitations/approval.
 - URL-based protected navigation, direct-link refresh, browser back/forward, 403 and 404 screens.
 - OpenAPI 3.0 specification at `/api/openapi.json` and self-hosted Swagger UI at `/api/docs/` after sign-in.
 - Structured allowlisted logs, correlation IDs on errors and transactional audit records, asynchronous database logs with console fallback and an HR log viewer. Defaults: console info+, database warn+; use `LOG_DB_MIN_LEVEL=info` to persist all requests.
@@ -59,7 +59,7 @@ pnpm build
 pnpm smoke:production
 ```
 
-The core suite has 31 backend tests plus 6 frontend tests and 6 desktop/mobile browser scenarios covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
+The core suite has 31 backend tests plus 7 frontend tests and 8 desktop/mobile browser scenarios covering salary validation and precision, quantiles, CSV escaping, search safety, authentication, viewer redaction, access control, currency totals, CRUD, audit records, conflict handling and logout. Browser verification is recorded in `docs/verification.md`; do not interpret a documented deployment recipe as a completed public deployment.
 
 ## Deployment
 

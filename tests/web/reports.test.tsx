@@ -57,35 +57,45 @@ test("No reportable groups has a useful empty state", () => {
   );
   expect(screen.getByText(/No reportable groups/)).toBeInTheDocument();
 });
-test("Registration defaults to viewer and sends the chosen form data", async () => {
-  window.history.replaceState({}, "", "/register");
-  const fetch = vi.fn().mockResolvedValue({
-    ok: true,
-    status: 201,
-    json: async () => ({
-      id: 3,
-      role: "VIEWER",
-      email: "new@example.com",
-      name: "New User",
-    }),
-  });
-  vi.stubGlobal("fetch", fetch);
-  const onLogin = vi.fn();
-  render(<Login onLogin={onLogin} />);
-  fireEvent.change(screen.getByLabelText("Full name"), {
-    target: { value: "New User" },
-  });
-  fireEvent.change(screen.getByLabelText("Email address"), {
-    target: { value: "new@example.com" },
-  });
-  fireEvent.change(screen.getByLabelText("Password"), {
-    target: { value: "LongPassword42!" },
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Create account →" }));
-  await waitFor(() => expect(onLogin).toHaveBeenCalled());
-  expect(JSON.parse(fetch.mock.calls[0][1].body).role).toBe("VIEWER");
-  expect(fetch.mock.calls[0][0]).toBe("/api/auth/register");
-});
+test.each(["VIEWER", "HR_MANAGER"])(
+  "Registration creates the selected %s account",
+  async (role) => {
+    window.history.replaceState({}, "", "/register");
+    const fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 201,
+      json: async () => ({
+        id: 3,
+        role,
+        email: "new@example.com",
+        name: "New User",
+      }),
+    });
+    vi.stubGlobal("fetch", fetch);
+    const onLogin = vi.fn();
+    render(<Login onLogin={onLogin} />);
+    fireEvent.change(screen.getByLabelText("Full name"), {
+      target: { value: "New User" },
+    });
+    fireEvent.change(screen.getByLabelText("Email address"), {
+      target: { value: "new@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), {
+      target: { value: "LongPassword42!" },
+    });
+    expect(screen.getByRole("combobox", { name: "Account type" })).toHaveValue(
+      "VIEWER",
+    );
+    if (role === "HR_MANAGER")
+      fireEvent.change(screen.getByRole("combobox", { name: "Account type" }), {
+        target: { value: role },
+      });
+    fireEvent.click(screen.getByRole("button", { name: "Create account →" }));
+    await waitFor(() => expect(onLogin).toHaveBeenCalled());
+    expect(JSON.parse(fetch.mock.calls[0][1].body).role).toBe(role);
+    expect(fetch.mock.calls[0][0]).toBe("/api/auth/register");
+  },
+);
 test("Login displays API errors without authenticating", async () => {
   vi.stubGlobal(
     "fetch",
@@ -97,6 +107,15 @@ test("Login displays API errors without authenticating", async () => {
   );
   const onLogin = vi.fn();
   render(<Login onLogin={onLogin} />);
+  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(screen.getByLabelText("Password")).toHaveValue("");
+  expect(screen.queryByText("Explore the demo")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "user@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "LongPassword42!" },
+  });
   fireEvent.click(
     screen.getByRole("button", { name: "Sign in to workspace →" }),
   );
@@ -118,6 +137,15 @@ test("A non-JSON hosting error shows a readable retry message", async () => {
   );
   const onLogin = vi.fn();
   render(<Login onLogin={onLogin} />);
+  expect(screen.getByLabelText("Email address")).toHaveValue("");
+  expect(screen.getByLabelText("Password")).toHaveValue("");
+  expect(screen.queryByText("Explore the demo")).not.toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "user@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), {
+    target: { value: "LongPassword42!" },
+  });
   fireEvent.click(
     screen.getByRole("button", { name: "Sign in to workspace →" }),
   );

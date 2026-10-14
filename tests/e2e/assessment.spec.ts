@@ -125,23 +125,60 @@ test("Viewer privacy enforced in UI and API; protected URL and logout", async ({
     page.getByRole("heading", { name: "Welcome back." }),
   ).toBeVisible();
 });
-test("Registration, refresh routing and unknown page", async ({ page }) => {
-  await page.goto("/register");
-  await page.getByLabel("Full name").fill("New Demo Viewer");
-  await page
-    .getByLabel("Email address")
-    .fill(`register-${test.info().project.name}@acme.example`);
-  await page.getByLabel("Password", { exact: true }).fill("NewDemoPassword42!");
-  await page.getByRole("button", { name: "Create account →" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Your people. The bigger picture." }),
-  ).toBeVisible();
-  await page.goto("/app/employees");
-  await expect(
-    page.getByRole("heading", { name: "Good decisions start with good data." }),
-  ).toBeVisible();
-  await page.goto("/not-a-page");
-  await expect(
-    page.getByRole("heading", { name: "Page not found" }),
-  ).toBeVisible();
-});
+for (const role of ["VIEWER", "HR_MANAGER"] as const) {
+  test(`Registration for ${role}, refresh routing and unknown page`, async ({
+    page,
+  }) => {
+    await page.goto("/login");
+    await expect(page.getByLabel("Email address")).toBeEmpty();
+    await expect(page.getByLabel("Password", { exact: true })).toBeEmpty();
+    await expect(
+      page.getByText("Explore the demo", { exact: true }),
+    ).toHaveCount(0);
+    await page
+      .getByRole("button", { name: "Create an account", exact: true })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "Create your account.", exact: true }),
+    ).toBeVisible();
+    await page.getByLabel("Full name").fill("New Account User");
+    await expect(page.getByLabel("Account type", { exact: true })).toHaveValue(
+      "VIEWER",
+    );
+    if (role === "HR_MANAGER")
+      await page.getByLabel("Account type", { exact: true }).selectOption(role);
+    await page
+      .getByLabel("Email address")
+      .fill(
+        `register-${role.toLowerCase()}-${test.info().project.name}@acme.example`,
+      );
+    await page
+      .getByLabel("Password", { exact: true })
+      .fill("NewDemoPassword42!");
+    await page.getByRole("button", { name: "Create account →" }).click();
+    await expect(
+      page.getByRole("heading", { name: "Your people. The bigger picture." }),
+    ).toBeVisible();
+    expect((await (await page.request.get("/api/auth/me")).json()).role).toBe(
+      role,
+    );
+    await page.goto("/app/employees");
+    await expect(
+      page.getByRole("heading", {
+        name: "Good decisions start with good data.",
+      }),
+    ).toBeVisible();
+    if (role === "HR_MANAGER")
+      await expect(
+        page.getByRole("button", { name: "Add employee" }),
+      ).toBeVisible();
+    else
+      await expect(
+        page.getByRole("button", { name: "Add employee" }),
+      ).toHaveCount(0);
+    await page.goto("/not-a-page");
+    await expect(
+      page.getByRole("heading", { name: "Page not found" }),
+    ).toBeVisible();
+  });
+}

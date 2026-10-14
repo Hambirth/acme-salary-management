@@ -7,8 +7,8 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
     ),
     [name, setName] = useState(""),
     [role, setRole] = useState("VIEWER"),
-    [email, setEmail] = useState("hr@acme.example"),
-    [password, setPassword] = useState("AssessmentDemo42!"),
+    [email, setEmail] = useState(""),
+    [password, setPassword] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -67,8 +67,12 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
       <section className="login-form">
         <form onSubmit={submit}>
           <span className="eyebrow">YOUR COMPENSATION WORKSPACE</span>
-          <h2>{register ? "Create a demo account." : "Welcome back."}</h2>
-          <p className="muted">Sign in to make sense of your salary data.</p>
+          <h2>{register ? "Create your account." : "Welcome back."}</h2>
+          <p className="muted">
+            {register
+              ? "Choose your account type to get started."
+              : "Sign in to make sense of your salary data."}
+          </p>
           {register && (
             <>
               <label>
@@ -82,15 +86,21 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
                 />
               </label>
               <label>
-                Demo role
-                <select value={role} onChange={(e) => setRole(e.target.value)}>
-                  <option value="VIEWER">Viewer</option>
+                Account type
+                <select
+                  aria-label="Account type"
+                  aria-describedby="account-access"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                >
+                  <option value="VIEWER">Read-only viewer</option>
                   <option value="HR_MANAGER">HR manager</option>
                 </select>
               </label>
-              <p className="muted">
-                This assessment contains synthetic data. Production HR access
-                would require administrator approval.
+              <p className="muted" id="account-access">
+                {role === "VIEWER"
+                  ? "Viewers can browse the directory and aggregate reports. Individual salaries and editing are restricted."
+                  : "HR managers can view salaries, manage employees and review activity logs."}
               </p>
             </>
           )}
@@ -115,6 +125,11 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
+          {register && (
+            <p className="muted">
+              Use at least 12 characters for your password.
+            </p>
+          )}
           {error && (
             <div role="alert" className="error">
               {error}
@@ -135,6 +150,7 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
               setRegister(next);
               setError("");
               if (next) {
+                setRole("VIEWER");
                 setEmail("");
                 setPassword("");
               }
@@ -142,24 +158,8 @@ export function Login({ onLogin }: { onLogin: (u: User) => void }) {
               window.dispatchEvent(new PopStateEvent("popstate"));
             }}
           >
-            {register ? "Already registered? Sign in" : "Create a demo account"}
+            {register ? "Already registered? Sign in" : "Create an account"}
           </button>
-          <div className="demo-box">
-            <strong>Explore the demo</strong>
-            <p>All employee data is synthetic.</p>
-            <div className="demo-buttons">
-              <button type="button" onClick={() => setEmail("hr@acme.example")}>
-                HR manager
-              </button>
-              <button
-                type="button"
-                onClick={() => setEmail("viewer@acme.example")}
-              >
-                Read-only viewer
-              </button>
-            </div>
-            <small>Demo password: AssessmentDemo42!</small>
-          </div>
         </form>
       </section>
     </main>
